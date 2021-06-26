@@ -94,13 +94,23 @@ def AddTile():
 		loadList[LatestTile] = graphic.Graphic("DirtTile.png",(x,y),True)
 		TakenGrid.append((x,y))
 
+		allKeys = list(loadList.keys())
+		index = 0
+		while (index<len(allKeys)):
+			g = allKeys[index]
+			if loadList[g].y > y or (loadList[g].y == y and loadList[g].x < x):
+				loadList[g] = loadList.pop(g)
+				print(f'Moved tile back')
+			index+=1
 
+	else:	
+		print("No space available")
 
-
+'''
 	if Overlap:
 		loadList.pop(prevTileName)
 		loadList[prevTileName] = prevTile
-
+'''
 def updateGraphic(name,x=0,y=0,m="SET"):
 	global loadList
 	if name in loadList:
