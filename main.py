@@ -1,6 +1,8 @@
+
 import pygame
 import inputControl
 import graphic
+import random
 from pygame.locals import *
 
 
@@ -8,7 +10,7 @@ from pygame.locals import *
 
 
 def main():
-	global pygame,loadList, win, count
+	global pygame,loadList, win, count, LatestTile, TakenGrid
 
 	#Intilize actual game
 	pygame.init()
@@ -19,13 +21,20 @@ def main():
 	#set background
 	loadList['Background'] = graphic.Graphic("Background.png",(0,0))
 
-	loadList['GridTile1'] = graphic.Graphic("DirtTile.png",(250,250),True)
+	loadList['Tile1'] = graphic.Graphic("DirtTile.png",(250,250),True)
 	loadList['Background'].name = "Background"	
 
 	loadList['Background'].name = "Background"
 
 	#timeVariable
 	count=0
+
+	#LatestTile
+	LatestTile = "Tile1"
+
+
+	#What grid spots are tken
+	TakenGrid = []
 
 	#Screen
 	win = pygame.display.set_mode((500,500))
@@ -54,8 +63,64 @@ def update():
 	pygame.display.update()
 
 
+def AddTile():
+	global pygame, count, win, loadList, LatestTile, TakenGrid
+	prevTile = loadList[LatestTile]
+	prevTileName = LatestTile
+
+	Overlap = False
+	loc = random.randint(0, 3)
+
+
+	if loc == 0:
+		x = prevTile.x+16
+		y = prevTile.y+8
+	elif loc == 1:
+		x = prevTile.x-16
+		y = prevTile.y+8
+	elif loc == 2:
+		x = prevTile.x-16
+		y = prevTile.y-8
+		Overlap = True
+	elif loc == 3:
+		x = prevTile.x+16
+		y = prevTile.y-8 
+		Overlap = True
+
+
+	if (x,y) not in TakenGrid: 
+		TileNum = str(int(LatestTile[-1])+1)
+		LatestTile = LatestTile[:-1]+TileNum 
+		loadList[LatestTile] = graphic.Graphic("DirtTile.png",(x,y),True)
+		TakenGrid.append((x,y))
+
+
+
+
+	if Overlap:
+		loadList.pop(prevTileName)
+		loadList[prevTileName] = prevTile
+
+def updateGraphic(name,x=0,y=0,m="SET"):
+	global loadList
+	if name in loadList:
+		pictureObj = loadList[name]
+	else:
+		print("No graphic exists")
+		return
+	if m=="SET":
+		pictureObj.moveGraphic(x,y)
+		print(f'Set to {x} and {y}')
+	if m=="INCR":
+		pictureObj.moveGraphic(pictureObj.x+x,pictureObj.y+y)
+		print(f'Moved to {pictureObj.x+x} and {pictureObj.y+y}')
+
+	loadList[name] = pictureObj
+
+		
+
 def inputCheck(i='None'):
-	global pygame, win,count
+	global pygame, win,count, LatestTile
 	if i.upper()=='A':
 		return
 	else:	
@@ -71,11 +136,22 @@ def inputCheck(i='None'):
 			
 			if event.type==pygame.KEYDOWN:
 
-				if event.key == pygame.K_RIGHT: pass
+				if event.key == pygame.K_RIGHT:
+					updateGraphic(LatestTile,1,0,"INCR")
 
-				elif event.key == pygame.K_LEFT: pass
+				elif event.key == pygame.K_LEFT:
+					updateGraphic(LatestTile,-1,0,"INCR")
+
+				elif event.key == pygame.K_UP: 
+					updateGraphic(LatestTile,0,-1,"INCR")
+
+				elif event.key == pygame.K_DOWN:
+					updateGraphic(LatestTile,0,1,"INCR") 
 
 				if event.key == pygame.K_ESCAPE: pass
+
+				if event.key == pygame.K_SPACE:
+					AddTile()
 
 def loadGraphics(loadList):
 	global pygame,win

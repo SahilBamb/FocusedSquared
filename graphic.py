@@ -33,5 +33,11 @@ class Graphic:
 		self.rightMost = x+width
 		self.bottomMost = y+height
 		return (topLeft,topRight,botLeft,botRight) 
+
+
+	def moveGraphic(self,x,y):
+		self.x = x
+		self.y = y
+		self.coord = (x,y)
 		
 
