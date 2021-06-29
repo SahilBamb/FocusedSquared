@@ -3,6 +3,7 @@ import pygame
 import inputControl
 import graphic
 import gridtile
+import textgraphic
 import random
 from pygame.locals import *
 
@@ -11,7 +12,7 @@ from pygame.locals import *
 
 
 def main():
-	global pygame,loadList, win, count, LatestTile, TakenGrid, loadGrid
+	global pygame,loadList, win, count, LatestTile, TakenGrid, loadGrid, loadTextList, endTime, tempTime, UIList
 
 	#Intilize actual game
 	pygame.init()
@@ -22,17 +23,35 @@ def main():
 	#set background
 	loadList['Background'] = graphic.Graphic("Background.png",(0,0))
 
-	#@loadList['Tile1'] = graphic.Graphic("DirtTile.png",(250,250),True)
+
+
+	UIList = {}
+	UIList['CountdownAdd'] = graphic.Graphic("ADD.png",(395,100),True)
+	UIList['CountdownCross'] = graphic.Graphic("CROSS.png",(435,99),True)
+	UIList['CountdownStart'] = graphic.Graphic("BATT.png",(320,102),True)
+
+	loadList['CountdownFrame'] = graphic.Graphic("TimerFrame.png",(300,10),True)
+	
+	
+
 	loadList['Background'].name = "Background"	
+	loadList['SELECTOR'] = None
+
+
 
 	loadGrid = [[None for x in range(10)] for y in range(10)]
 	for x in range(10):
 		for y in range(10):
-			loadGrid[x][y] = gridtile.Gridtile(x,y)
+			loadGrid[x][y] = gridtile.Gridtile(x,y,'OUTGRID')
+
+
+	tempTime = 45*60
+	loadTextList = {'TIMER': textgraphic.Textgraphic(f'{tempTime//60:02}:{tempTime%60:02}',40,(310,0))}
+	endTime = None
 
 	#timeVariable
 	count=0
-
+	
 	#LatestTile
 	LatestTile = "Tile1"
 
@@ -45,11 +64,11 @@ def main():
 	pygame.display.set_caption("Focused Squared")
 	pygame.mouse.set_visible(True)
 	pygame.mouse.set_cursor(*pygame.cursors.tri_left)
-	#pygame.display.set_icon(pygame.image.load('logo.png') )
+	pygame.display.set_icon(pygame.image.load('logo.png') )
 
 
 def update(): 
-	global pygame, count, win, loadList, loadGrid
+	global pygame, count, win, loadList, loadGrid, UIList, endTime, tempTime
 
 	#iterate count
 	count = count+1 if count<999 else 0
@@ -58,10 +77,15 @@ def update():
 	inputCheck()
 
 	#load all images
-	loadGraphics(loadList, loadGrid)
+	loadGraphics(loadList, loadGrid, loadTextList, UIList)
+
+	if endTime:
+		if updateTime():
+			tempTime = 45
+			endTime = None
 
 	#time delay
-	pygame.time.delay(100)
+	pygame.time.delay(50)
 
 	#update the screen
 	pygame.display.update()
@@ -109,12 +133,6 @@ def AddTile():
 			index+=1
 
 
-'''
-	if Overlap:
-		loadList.pop(prevTileName)
-		loadList[prevTileName] = prevTile
-'''
-
 def updateGraphic(name,x=0,y=0,m="SET"):
 	global loadList
 	if name in loadList:
@@ -128,53 +146,53 @@ def updateGraphic(name,x=0,y=0,m="SET"):
 	if m=="INCR":
 		pictureObj.moveGraphic(pictureObj.x+x,pictureObj.y+y)
 		print(f'Moved to {pictureObj.x+x} and {pictureObj.y+y}')
-
 	loadList[name] = pictureObj
 
 		
 
 def inputCheck(i='None'):
-	global pygame, win,count, LatestTile, loadList
+	global pygame, win,count, LatestTile, loadList, endTime
 	if i.upper()=='A':
 		return
-	else:	
+	else:
+		x = pygame.mouse.get_pos()[0]
+		y = pygame.mouse.get_pos()[1]
+		clickCheck(x,y)
+
 		for event in pygame.event.get():
 			if event.type==pygame.QUIT: 
 				count=1001
 				print("Quitting")
 			
 			elif event.type== MOUSEBUTTONDOWN: 
-				x = pygame.mouse.get_pos()[0]
-				y = pygame.mouse.get_pos()[1]
-				hold = clickCheck(x,y)
-				if hold: loadList[hold].picPath='GrassTile.png'
+				clickingOn = clickCheck(x,y)
+				if clickingOn == 'CountdownAdd':
+					setTime(15,0,'INCR')
+				elif clickingOn == 'CountdownCross':
+					setTime(0,0,'SET')
+				if clickingOn == 'CountdownStart':
+					timeStart()
 
-			
+
 			if event.type==pygame.KEYDOWN:
 
-				if event.key == pygame.K_RIGHT:
-					updateGraphic(LatestTile,1,0,"INCR")
-
-				elif event.key == pygame.K_LEFT:
-					updateGraphic(LatestTile,-1,0,"INCR")
-
-				elif event.key == pygame.K_UP: 
-					updateGraphic(LatestTile,0,-1,"INCR")
-
-				elif event.key == pygame.K_DOWN:
-					updateGraphic(LatestTile,0,1,"INCR") 
-
-				if event.key == pygame.K_ESCAPE: pass
-
+				if event.key == pygame.K_RIGHT: pass
+				elif event.key == pygame.K_LEFT: pass
+				if not endTime: 
+					if event.key == pygame.K_UP: setTime(1,0,'INCR')
+					elif event.key == pygame.K_DOWN: setTime(-1,0,'INCR')
+					elif event.key == K_0: setTime(0,0,'SET')
+					elif event.key == K_1: setTime(15,0,'INCR')
 				if event.key == pygame.K_SPACE:
-					AddTile()
+					if clickCheck(x,y)=='CountdownFrame':
+						timeStart()
+				
 
-def loadGraphics(loadList,loadGrid):
-	global pygame,win
-	for graphic in loadList:
-		pictureObj = loadList[graphic]
-		if type(pictureObj)==str:
-			win.blit(pygame.image.load(pictureObj),(0,0))
+def loadGraphics(loadList,loadGrid, loadTextList, UIList):
+	global pygame, win
+	for image in loadList:
+		pictureObj = loadList[image]
+		if not pictureObj: continue
 		else:
 			win.blit(pygame.image.load(pictureObj.picPath),pictureObj.coord)
 
@@ -183,32 +201,93 @@ def loadGraphics(loadList,loadGrid):
 			if tile:
 				win.blit(pygame.image.load(tile.picPath),tile.coord)
 
+	if loadList['SELECTOR']: 
+		pictureObj = loadList['SELECTOR']
+		win.blit(pygame.image.load(pictureObj.picPath),pictureObj.coord)
+
+
+	for u in UIList:
+		pictureObj = UIList[u]
+		win.blit(pygame.image.load(pictureObj.picPath),pictureObj.coord)
+
+	for t in loadTextList:
+		t = loadTextList[t]
+		drawText(t.text,t.size,t.coord,t.color,t.font)
+
 
 
 def clickCheck(x,y):
-	global loadList
+	global loadList, loadGrid, count, UIList
+
+
+	for u in UIList:
+		pictureObj = UIList[u]
+		if pictureObj.clickable: 
+			if pictureObj.y+5<y<pictureObj.bottomMost-10 and pictureObj.x+5<x<pictureObj.rightMost-10:
+				return u
+					
+
 	for row in loadGrid:
 		for tile in row:
 			if tile:
 				pictureObj = tile
 				if pictureObj.y+5<y<pictureObj.bottomMost-10 and pictureObj.x+5<x<pictureObj.rightMost-10:
-					print(f'Clicking on {pictureObj}')
+					loadList['SELECTOR'] = graphic.Graphic('Selector.png',(pictureObj.x,pictureObj.y))
+					#if count%3==0: 
+					return tile
 
+	loadList['SELECTOR'] = None
 
-
-	for graphic in loadList:
-		pictureObj = loadList[graphic]
-		if type(pictureObj)==str:
-			continue
+	for image in loadList:
+		pictureObj = loadList[image]
+		if not pictureObj: continue
 		else:
-			if pictureObj.clickable: #Equally horrible peice of code that restricts clicking based on precision (hard coded so not adjusted to size like it should be)
+			if pictureObj.clickable: 
 				if pictureObj.y+5<y<pictureObj.bottomMost-10 and pictureObj.x+5<x<pictureObj.rightMost-10:
+					if image=='CountdownFrame':
+						loadList['SELECTOR'] = graphic.Graphic('TimerFrameSelector.png',(pictureObj.x,pictureObj.y))
+					else: loadList['SELECTOR'] = None
 					print(f'Clicking on {pictureObj}')
-					if 'Grass' not in pictureObj.picPath: return graphic
-					#Horrible piece of code that makes this link dependent on not being 'Grass'
+					return image
 
+	loadList['SELECTOR'] = None
 	return None
 
+
+def setTime(minutes=0,seconds=0, m='SET'):
+	global tempTime, loadTextList
+	if m == 'INCR': tempTime += (minutes*60)+seconds
+	elif m == 'SET' : tempTime = (minutes*60)+seconds
+	else: return False
+	tempTime = min((99*60)+59,tempTime)
+	loadTextList['TIMER'].text = f'{tempTime//60:02}:{tempTime%60:02}'
+
+
+def timeStart():
+	global endTime, tempTime
+	endTime = pygame.time.get_ticks()+int((1000*tempTime))
+
+def updateTime():
+	global endTime, loadTextList
+	milliseconds = endTime-pygame.time.get_ticks()
+	minutes = milliseconds//60000
+	seconds = (milliseconds%60000) //1000
+	if milliseconds<=0: return True
+	loadTextList['TIMER'].text = f'{minutes:02}:{seconds:02}'
+	return False
+
+
+	minutes, seconds = divmod(timeSeconds, 60)
+	while timeLeft:
+		
+		timeText = '{:02d}:{:02d}'.format(minutes, seconds)
+		print(timeText)
+		time.sleep(1)
+		timeSeconds -= 1
+
+def drawText(text='Sample Text',size=40,coord=(230,200),color=(82,123,219),font='Pixeled.ttf'):
+	global pygame, win
+	win.blit(pygame.font.Font(font, size).render(text, True, color),coord)
 
 main()
 

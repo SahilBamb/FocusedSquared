@@ -3,53 +3,56 @@ from graphic import Graphic
 class Gridtile(Graphic):
 
 	def __init__(self,x,y,kind='DIRT'):
+
+		slx = 190
+		sly = 250
 		
 		if y==0:
-			y = 100+(y+1)*x*8
-			x = 200+x*16
+			y = slx+(y+1)*x*8
+			x = sly+x*16
 
 		if y==1:
-			y = 108+(y)*x*8
-			x = 200+(x-1)*16
+			y = slx+8+(y)*x*8
+			x = sly+(x-1)*16
 
 		if y==2:
-			y = 116+(y-1)*x*8
-			x = 200+(x-2)*16
+			y = slx+16+(y-1)*x*8
+			x = sly+(x-2)*16
 
 		if y==3:
-			y = 124+(y-2)*x*8
-			x = 200+(x-3)*16
+			y = slx+24+(y-2)*x*8
+			x = sly+(x-3)*16
 
 		if y==4:
-			y = 132+(y-3)*x*8
-			x = 200+(x-4)*16
+			y = slx+32+(y-3)*x*8
+			x = sly+(x-4)*16
 
 		if y==5:
-			y = 140+(y-4)*x*8
-			x = 200+(x-5)*16
+			y = slx+40+(y-4)*x*8
+			x = sly+(x-5)*16
 
 		if y==6:
-			y = 148+(y-5)*x*8
-			x = 200+(x-6)*16
+			y = slx+48+(y-5)*x*8
+			x = sly+(x-6)*16
 
 		if y==7:
-			y = 156+(y-6)*x*8
-			x = 200+(x-7)*16
+			y = slx+56+(y-6)*x*8
+			x = sly+(x-7)*16
 
 		if y==8:
-			y = 164+(y-7)*x*8
-			x = 200+(x-8)*16
+			y = slx+64+(y-7)*x*8
+			x = sly+(x-8)*16
 
 		if y==9:
-			y = 172+(y-8)*x*8
-			x = 200+(x-9)*16
+			y = slx+72+(y-8)*x*8
+			x = sly+(x-9)*16
 			
 		coord = (x,y)
 
 		super().__init__(self.assignKind(kind),coord)
 
 	def assignKind(self,kind):
-		tileTypes = {'DIRT':'DirtTile.png','GRASS':'GrassTile.png'}
+		tileTypes = {'DIRT':'DirtTile.png','GRASS':'GrassTile.png','OUTGRID':'OutlinedDirtBlock.png'}
 		if kind in tileTypes:
 			self.kind = kind
 			self.name = f'{kind}'
