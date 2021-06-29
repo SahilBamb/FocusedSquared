@@ -2,15 +2,16 @@
 import pygame
 import inputControl
 import graphic
+import gridtile
 import random
 from pygame.locals import *
 
 
-
+#Known bugs: in loadList Tile number is wrong. It works for single digits but is not able to parse out after that 
 
 
 def main():
-	global pygame,loadList, win, count, LatestTile, TakenGrid
+	global pygame,loadList, win, count, LatestTile, TakenGrid, loadGrid
 
 	#Intilize actual game
 	pygame.init()
@@ -21,10 +22,13 @@ def main():
 	#set background
 	loadList['Background'] = graphic.Graphic("Background.png",(0,0))
 
-	loadList['Tile1'] = graphic.Graphic("DirtTile.png",(250,250),True)
+	#@loadList['Tile1'] = graphic.Graphic("DirtTile.png",(250,250),True)
 	loadList['Background'].name = "Background"	
 
-	loadList['Background'].name = "Background"
+	loadGrid = [[None for x in range(10)] for y in range(10)]
+	for x in range(10):
+		for y in range(10):
+			loadGrid[x][y] = gridtile.Gridtile(x,y)
 
 	#timeVariable
 	count=0
@@ -45,7 +49,7 @@ def main():
 
 
 def update(): 
-	global pygame, count, win, loadList
+	global pygame, count, win, loadList, loadGrid
 
 	#iterate count
 	count = count+1 if count<999 else 0
@@ -54,7 +58,7 @@ def update():
 	inputCheck()
 
 	#load all images
-	loadGraphics(loadList)
+	loadGraphics(loadList, loadGrid)
 
 	#time delay
 	pygame.time.delay(100)
@@ -92,6 +96,7 @@ def AddTile():
 		TileNum = str(int(LatestTile[-1])+1)
 		LatestTile = LatestTile[:-1]+TileNum 
 		loadList[LatestTile] = graphic.Graphic("DirtTile.png",(x,y),True)
+		loadList[LatestTile].name = LatestTile[:-1]+TileNum 
 		TakenGrid.append((x,y))
 
 		allKeys = list(loadList.keys())
@@ -100,17 +105,16 @@ def AddTile():
 			g = allKeys[index]
 			if loadList[g].y > y or (loadList[g].y == y and loadList[g].x < x):
 				loadList[g] = loadList.pop(g)
-				print(f'Moved tile back')
+				#print(f'Moved tile back')
 			index+=1
 
-	else:	
-		print("No space available")
 
 '''
 	if Overlap:
 		loadList.pop(prevTileName)
 		loadList[prevTileName] = prevTile
 '''
+
 def updateGraphic(name,x=0,y=0,m="SET"):
 	global loadList
 	if name in loadList:
@@ -130,7 +134,7 @@ def updateGraphic(name,x=0,y=0,m="SET"):
 		
 
 def inputCheck(i='None'):
-	global pygame, win,count, LatestTile
+	global pygame, win,count, LatestTile, loadList
 	if i.upper()=='A':
 		return
 	else:	
@@ -142,7 +146,9 @@ def inputCheck(i='None'):
 			elif event.type== MOUSEBUTTONDOWN: 
 				x = pygame.mouse.get_pos()[0]
 				y = pygame.mouse.get_pos()[1]
-				clickCheck(x,y)
+				hold = clickCheck(x,y)
+				if hold: loadList[hold].picPath='GrassTile.png'
+
 			
 			if event.type==pygame.KEYDOWN:
 
@@ -163,7 +169,7 @@ def inputCheck(i='None'):
 				if event.key == pygame.K_SPACE:
 					AddTile()
 
-def loadGraphics(loadList):
+def loadGraphics(loadList,loadGrid):
 	global pygame,win
 	for graphic in loadList:
 		pictureObj = loadList[graphic]
@@ -172,16 +178,36 @@ def loadGraphics(loadList):
 		else:
 			win.blit(pygame.image.load(pictureObj.picPath),pictureObj.coord)
 
+	for row in loadGrid:
+		for tile in row:
+			if tile:
+				win.blit(pygame.image.load(tile.picPath),tile.coord)
+
+
+
 def clickCheck(x,y):
 	global loadList
+	for row in loadGrid:
+		for tile in row:
+			if tile:
+				pictureObj = tile
+				if pictureObj.y+5<y<pictureObj.bottomMost-10 and pictureObj.x+5<x<pictureObj.rightMost-10:
+					print(f'Clicking on {pictureObj}')
+
+
+
 	for graphic in loadList:
 		pictureObj = loadList[graphic]
 		if type(pictureObj)==str:
 			continue
 		else:
-			if pictureObj.clickable:
-				if pictureObj.y<y<pictureObj.bottomMost and pictureObj.x<x<pictureObj.rightMost:
+			if pictureObj.clickable: #Equally horrible peice of code that restricts clicking based on precision (hard coded so not adjusted to size like it should be)
+				if pictureObj.y+5<y<pictureObj.bottomMost-10 and pictureObj.x+5<x<pictureObj.rightMost-10:
 					print(f'Clicking on {pictureObj}')
+					if 'Grass' not in pictureObj.picPath: return graphic
+					#Horrible piece of code that makes this link dependent on not being 'Grass'
+
+	return None
 
 
 main()
@@ -189,6 +215,7 @@ main()
 
 while count<1000:
 	update()
+	#AddTile()
 
 
 

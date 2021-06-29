@@ -13,7 +13,8 @@ class Graphic:
 		self.coord = coord
 		self.setBoundaries(picPath, coord)
 		self.clickable = clickable
-		self.name = ""
+		try: self.name
+		except: self.name = ""
 
 
 	def __str__(self):
