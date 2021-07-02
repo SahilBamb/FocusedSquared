@@ -68,10 +68,15 @@ class Gridtile(Graphic):
 
 	def grow(self,time=0):
 		if self.plant: 
-			if self.plant.grow():
-				val = self.plant.harvest
-				self.plant = None
-				return val
+			self.plant.grow(time)
+
+	def harvest(self):
+		if self.plant and self.plant.ReadytoHarvest:
+			val = self.plant.harvest
+			self.plant = None
+			return val
+		else:
+			return False
 
 
 		

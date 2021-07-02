@@ -28,7 +28,7 @@ def main():
 	loadList = {}
 
 	#Intilizie Inventory
-	inventory = [item.Item(graphic.Graphic('ITEMSeedInv.png',(20+(51*x),432),True,'ITEM'),plant.Plant(),'ITEM') for x in range(9)]
+	inventory = [item.Item(graphic.Graphic('ITEMSeedInv.png',(20+(51*x),432),True,'ITEM'),plant.Plant(),'ITEM','SEED') for x in range(1)]
 
 	#set background
 	loadList['Background'] = graphic.Graphic("Background.png",(0,0),False,'UI')
@@ -65,7 +65,7 @@ def main():
 	loadTextList.update({'TIMER1': textgraphic.Textgraphic(f'{tempTime//60:02}:{tempTime%60:02}',100,(135,12),RGBColors.DDG,'iflash-502.ttf')})
 
 	currentItem = None
-	currency = 1000 
+	currency = 0
 
 	loadTextList['Currency2'] = textgraphic.Textgraphic(f"${currency}", 15, (72,375), (0,0,0), 'Pixeled.ttf')
 	loadTextList['Currency'] = textgraphic.Textgraphic(f"${currency}", 15, (70,373), RGBColors.Gold, 'Pixeled.ttf')
@@ -78,7 +78,7 @@ def main():
 	pygame.display.set_caption("Focused Squared")
 	pygame.mouse.set_visible(True)
 	pygame.mouse.set_cursor(*pygame.cursors.tri_left)
-	#pygame.display.set_icon(pygame.image.load('logo.png') )
+	pygame.display.set_icon(pygame.image.load('logo.png') )
 
 
 def update(): 
@@ -97,6 +97,9 @@ def update():
 	loadGraphics(loadList, loadGrid, loadTextList, inventory)
 
 	if endTime:
+		if ((endTime-pygame.time.get_ticks()) % 60000 ) < 100:
+			print("Issa growin!")
+			growTiles(loadGrid,1)
 		if setTime(0,0,'UPDAT'):
 			tempTime = 45
 			endTime = None
@@ -107,9 +110,13 @@ def update():
 	#update the screen
 	pygame.display.update()
 
+def growTiles(loadGrid,timePassed):
+	for row in loadGrid:
+		for tile in row:
+			if tile: tile.grow(timePassed)
 
 def inputCheck(i='None'):
-	global pygame, win,count, loadList, endTime, loadGrid, loadTextList, PlantingOnX, PlantingOnY, currentItem, inventory
+	global pygame, win,count, loadList, endTime, loadGrid, loadTextList, PlantingOnX, PlantingOnY, currentItem, inventory, tempTime, currency
 	global ux, uy, speed
 
 	if i.upper()=='A':
@@ -127,36 +134,51 @@ def inputCheck(i='None'):
 				clickingOn = clickCheck(x,y)
 				if clickingOn:
 					if clickingOn.toI == 'UI':
-						if clickingOn.name=='Heart':
-							setTime(15, 0, 'INCR')
-						elif clickingOn.name == 'Shell':
-							setTime(0, 0, 'SET')
-						elif clickingOn.name == 'Clover':
-							setTime(0, 0, 'INIT')
+						if not endTime:
+							if clickingOn.name=='Heart':
+								setTime(15, 0, 'INCR')
+							elif clickingOn.name == 'Shell':
+								setTime(0, 0, 'SET')
+							elif clickingOn.name == 'Clover':
+								setTime(0, 0, 'INIT')
 
 					elif clickingOn.toI=='TILE':
-						if currentItem:
-							Gridx = clickingOn.Gridx
-							PlantingOnX = Gridx
-							Gridy = clickingOn.Gridy
-							PlantingOny = Gridx
-							print(f"Going to plant on {Gridx}, {Gridy}")
-							loadGrid[Gridx][Gridy].plantOn(currentItem.plant)
-							loadList.pop('InvCursor')
-							inventory[(currentItem.pic.x+20) // 51] = None
-							currentItem = None
+						Gridx = clickingOn.Gridx
+						PlantingOnX = Gridx
+						Gridy = clickingOn.Gridy
+						PlantingOny = Gridx
+						if currentItem and currentItem.itemType=='SEED':
+							if not loadGrid[Gridx][Gridy].plant:
+								print(f"Going to plant on {Gridx}, {Gridy}")
+								loadGrid[Gridx][Gridy].plantOn(currentItem.plant)
+								loadList.pop('InvCursor')
+								inventory[(currentItem.pic.x+20) // 51] = None
+								currentItem = None
+							else:
+								print("That location is already planted")
+						elif loadGrid[Gridx][Gridy].plant:
+							if loadGrid[Gridx][Gridy].plant.ReadytoHarvest:
+								h = loadGrid[Gridx][Gridy].harvest()
+								currency += h
+								loadTextList['Currency2'] = textgraphic.Textgraphic(f"${currency}", 15, (72, 375),(0, 0, 0), 'Pixeled.ttf')
+								loadTextList['Currency'] = textgraphic.Textgraphic(f"${currency}", 15, (70, 373),RGBColors.Gold, 'Pixeled.ttf')
+								loadTextList['Money'] = textgraphic.Textgraphic(f'+{h}', 8, (x - 5, y - 5),RGBColors.getRandomColor())
+								loadTextList['Money'].ff = True
 
 					elif clickingOn.toI=='ITEM':
-						if currentItem:
-							print(f'De-selecting {currentItem}')
-							currentItem = None
-							loadList.pop('InvCursor')
-						else:
-							currentItem = clickingOn
-							ix = currentItem.pic.x
-							iy = currentItem.pic.y
-							loadList['InvCursor'] = graphic.Graphic("InvCursor.png", (ix, iy), False, 'UI')
-							print(f'Selecting {currentItem}')
+						if clickingOn.itemType=='SEED':
+							if currentItem:
+								print(f'De-selecting {currentItem}')
+								currentItem = None
+								loadList.pop('InvCursor')
+							else:
+								currentItem = clickingOn
+								ix = currentItem.pic.x
+								iy = currentItem.pic.y
+								loadList['InvCursor'] = graphic.Graphic("InvCursor.png", (ix, iy), False, 'UI')
+								print(f'Selecting {currentItem}')
+						if clickingOn.itemType == 'TILEEXPAND':
+							pass
 
 					print(clickingOn.toI)
 				'''
@@ -184,8 +206,12 @@ def inputCheck(i='None'):
 			if event.type==pygame.KEYDOWN:
 				if event.key == pygame.K_RIGHT: ux+=speed
 				elif event.key == pygame.K_LEFT: ux-=speed
-				if not endTime: 
-					if event.key == pygame.K_UP: uy-=speed
+				#if event.key == pygame.K_ESCAPE:
+					#tempTime = 45
+					#endTime = None
+				if not endTime:
+					if event.key == pygame.K_UP:
+						setTime(0,3,'INCR')
 						#setTime(1,0,'INCR')
 					elif event.key == pygame.K_DOWN: uy+=speed
 						#setTime(-1,0,'INCR')
@@ -209,12 +235,9 @@ def loadGraphics(loadList,loadGrid, loadTextList, inventory):
 		if not pictureObj: continue
 		else:
 			win.blit(pygame.image.load(pictureObj.picPath),pictureObj.coord)
-
 	for slot in inventory:
 		if slot:
 			win.blit(pygame.image.load(slot.pic.picPath), (slot.pic.coord[0],slot.pic.coord[1]))
-
-
 	for row in loadGrid:
 		for tile in row:
 			if tile:
@@ -246,7 +269,12 @@ def clickCheck(x,y):
 			if tile:
 				pictureObj = tile
 				if pictureObj.y+5<y<pictureObj.bottomMost-10 and pictureObj.x+5<x<pictureObj.rightMost-10:
-					loadList['SELECTOR'] = graphic.Graphic('Selector.png',(pictureObj.x,pictureObj.y),False,'UI')
+					if currentItem and currentItem.itemType=='SEED':
+						loadList['SELECTOR'] = graphic.Graphic('PSelector.png', (pictureObj.x, pictureObj.y), False,'UI')
+					elif pictureObj.plant and pictureObj.plant.ReadytoHarvest:
+						loadList['SELECTOR'] = graphic.Graphic('HSelector.png', (pictureObj.x, pictureObj.y), False,'UI')
+					else:
+						loadList['SELECTOR'] = graphic.Graphic('Selector.png', (pictureObj.x, pictureObj.y), False,'UI')
 					return tile
 
 	loadList['SELECTOR'] = None
