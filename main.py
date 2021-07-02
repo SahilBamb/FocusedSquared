@@ -5,6 +5,9 @@ import graphic
 import gridtile
 import textgraphic
 import random
+import plant
+import RGBColors
+import item
 from pygame.locals import *
 
 
@@ -12,38 +15,61 @@ from pygame.locals import *
 
 
 def main():
-	global pygame,loadList, win, count, loadGrid, loadTextList, endTime, tempTime
+	global pygame,loadList, win, count, loadGrid, loadTextList, endTime, tempTime, currency, inventory, PlantingOnX, PlantingOnY, currentItem
+	global ux, uy, speed
 
+	ux = 70
+	uy = 373
+	speed = 1
 	#Intilize actual game
 	pygame.init()
 
 	#loadlist for images
 	loadList = {}
 
-	#set background
-	loadList['Background'] = graphic.Graphic("Background.png",(0,0))
+	#Intilizie Inventory
+	inventory = [item.Item(graphic.Graphic('ITEMSeedInv.png',(20+(51*x),432),True,'ITEM'),plant.Plant(),'ITEM') for x in range(9)]
 
-	loadList['CountdownFrame'] = graphic.Graphic("TimerFrame.png",(300,10),True)
-	loadList['CountdownAdd'] = graphic.Graphic("ADD.png",(395,100),True)
-	loadList['CountdownCross'] = graphic.Graphic("CROSS.png",(435,99),True)
-	loadList['CountdownStart'] = graphic.Graphic("BATT.png",(320,102),True)
-	
-	
+	#set background
+	loadList['Background'] = graphic.Graphic("Background.png",(0,0),False,'UI')
+
+	#loadList['CountdownFrame'] = graphic.Graphic("FrameTrace.png",(210,10),True)
+
 	loadList['Background'].name = "Background"	
 	loadList['SELECTOR'] = None
 
+	#Inventory Frame
+	loadList['Inventory'] = graphic.Graphic("InventoryFrame.png",(0,411),True,'UI')
+
+	loadList['Clover'] = graphic.Graphic("Clovercon.png",(100,36),True,'UI')
+	loadList['Clover'].name = 'Clover'
+	loadList['Heart'] = graphic.Graphic("HeartIcon.png",(100,62),True,'UI')
+	loadList['Heart'].name = 'Heart'
+	loadList['Shell'] = graphic.Graphic("Shell.png", (100, 85), True,'UI')
+	loadList['Shell'].name = 'Shell'
+
+	#Currency
+	loadList['CurrencyCoin'] = graphic.Graphic("Coins.png",(16,368),False,'UI')
 
 	loadGrid = [[None for x in range(10)] for y in range(10)]
 	for x in range(10):
 		for y in range(10):
 			loadGrid[x][y] = gridtile.Gridtile(x,y,'OUTGRID')
 			loadGrid[x][y].name += f' x:{x},y:{y}'
+			#loadGrid[x][y].plantOn(plant.Plant())
 
-
+	PlantingOnX = PlantingOnY = None
 	tempTime = 45*60
 	endTime = None
-	loadTextList = {'TIMER': textgraphic.Textgraphic(f'{tempTime//60:02}:{tempTime%60:02}',40,(310,0))}
-	
+	loadTextList = {'TIMER': textgraphic.Textgraphic(f'{tempTime//60:02}:{tempTime%60:02}',100,(135,20),RGBColors.GRAY,'iflash-502.ttf')}
+	loadTextList.update({'TIMER1': textgraphic.Textgraphic(f'{tempTime//60:02}:{tempTime%60:02}',100,(135,12),RGBColors.DDG,'iflash-502.ttf')})
+
+	currentItem = None
+	currency = 1000 
+
+	loadTextList['Currency2'] = textgraphic.Textgraphic(f"${currency}", 15, (72,375), (0,0,0), 'Pixeled.ttf')
+	loadTextList['Currency'] = textgraphic.Textgraphic(f"${currency}", 15, (70,373), RGBColors.Gold, 'Pixeled.ttf')
+
 	#timeVariable
 	count=0
 
@@ -52,11 +78,14 @@ def main():
 	pygame.display.set_caption("Focused Squared")
 	pygame.mouse.set_visible(True)
 	pygame.mouse.set_cursor(*pygame.cursors.tri_left)
-	pygame.display.set_icon(pygame.image.load('logo.png') )
+	#pygame.display.set_icon(pygame.image.load('logo.png') )
 
 
 def update(): 
-	global pygame, count, win, loadList, loadGrid, endTime, tempTime
+	global pygame, count, win, loadList, loadGrid, endTime, tempTime, inventory
+	global ux, uy
+
+	#loadList['Test'].coord = (ux, uy)
 
 	#iterate count
 	count = count+1 if count<999 else 0
@@ -65,7 +94,7 @@ def update():
 	inputCheck()
 
 	#load all images
-	loadGraphics(loadList, loadGrid, loadTextList)
+	loadGraphics(loadList, loadGrid, loadTextList, inventory)
 
 	if endTime:
 		if setTime(0,0,'UPDAT'):
@@ -80,7 +109,9 @@ def update():
 
 
 def inputCheck(i='None'):
-	global pygame, win,count, loadList, endTime
+	global pygame, win,count, loadList, endTime, loadGrid, loadTextList, PlantingOnX, PlantingOnY, currentItem, inventory
+	global ux, uy, speed
+
 	if i.upper()=='A':
 		return
 	else:
@@ -92,30 +123,86 @@ def inputCheck(i='None'):
 			if event.type==pygame.QUIT: 
 				count=1001
 			
-			elif event.type== MOUSEBUTTONDOWN: 
+			elif event.type== MOUSEBUTTONDOWN:
 				clickingOn = clickCheck(x,y)
-				if clickingOn == 'CountdownAdd':
-					setTime(15,0,'INCR')
-				elif clickingOn == 'CountdownCross':
-					setTime(0,0,'SET')
-				elif clickingOn == 'CountdownStart':
-					setTime(0,0,'INIT')
+				if clickingOn:
+					if clickingOn.toI == 'UI':
+						if clickingOn.name=='Heart':
+							setTime(15, 0, 'INCR')
+						elif clickingOn.name == 'Shell':
+							setTime(0, 0, 'SET')
+						elif clickingOn.name == 'Clover':
+							setTime(0, 0, 'INIT')
 
+					elif clickingOn.toI=='TILE':
+						if currentItem:
+							Gridx = clickingOn.Gridx
+							PlantingOnX = Gridx
+							Gridy = clickingOn.Gridy
+							PlantingOny = Gridx
+							print(f"Going to plant on {Gridx}, {Gridy}")
+							loadGrid[Gridx][Gridy].plantOn(currentItem.plant)
+							loadList.pop('InvCursor')
+							inventory[(currentItem.pic.x+20) // 51] = None
+							currentItem = None
+
+					elif clickingOn.toI=='ITEM':
+						if currentItem:
+							print(f'De-selecting {currentItem}')
+							currentItem = None
+							loadList.pop('InvCursor')
+						else:
+							currentItem = clickingOn
+							ix = currentItem.pic.x
+							iy = currentItem.pic.y
+							loadList['InvCursor'] = graphic.Graphic("InvCursor.png", (ix, iy), False, 'UI')
+							print(f'Selecting {currentItem}')
+
+					print(clickingOn.toI)
+				'''
+				clickingOn = clickCheck(x,y)
+				if clickingOn:
+					if clickingOn.isTile():
+						if PlantingOnX and PlantingOny:
+							Gridx = clickingOn.Gridx
+							PlantingOnX = Gridx
+							Gridy = clickingOn.Gridy
+							PlantingOny = Gridx
+							print(f"Going to plant on {Gridx}, {Gridy}")
+						else:
+							PlantingOnX = PlantingOny = None
+
+						if clickingOn.plant:
+							h = loadGrid[Gridx][Gridy].grow()
+							if h: 
+								loadTextList['Money'] = textgraphic.Textgraphic(f'+{h}',8,(x-5,y-5),RGBColors.getRandomColor())
+								loadTextList['Money'].ff=True
+						else:
+							loadGrid[Gridx][Gridy].plantOn(plant.Plant)
+						'''
 
 			if event.type==pygame.KEYDOWN:
-				if event.key == pygame.K_RIGHT: pass
-				elif event.key == pygame.K_LEFT: pass
+				if event.key == pygame.K_RIGHT: ux+=speed
+				elif event.key == pygame.K_LEFT: ux-=speed
 				if not endTime: 
-					if event.key == pygame.K_UP: setTime(1,0,'INCR')
-					elif event.key == pygame.K_DOWN: setTime(-1,0,'INCR')
+					if event.key == pygame.K_UP: uy-=speed
+						#setTime(1,0,'INCR')
+					elif event.key == pygame.K_DOWN: uy+=speed
+						#setTime(-1,0,'INCR')
 					elif event.key == K_0: setTime(0,0,'SET')
 					elif event.key == K_1: setTime(15,0,'INCR')
-				if event.key == pygame.K_SPACE:
-					if clickCheck(x,y)=='CountdownFrame':
+					elif event.key == pygame.K_SPACE:
 						setTime(0,0,'INIT')
+				if event.key == pygame.K_LSHIFT:
+					speed-=1
+					print(f'Speed is now {speed}')
+				elif event.key == pygame.K_RSHIFT:
+					speed+=1
+					print(f'Speed is now {speed}')
+				print(f'{ux} {uy}')
 				
 
-def loadGraphics(loadList,loadGrid, loadTextList):
+def loadGraphics(loadList,loadGrid, loadTextList, inventory):
 	global pygame, win
 	for image in loadList:
 		pictureObj = loadList[image]
@@ -123,33 +210,52 @@ def loadGraphics(loadList,loadGrid, loadTextList):
 		else:
 			win.blit(pygame.image.load(pictureObj.picPath),pictureObj.coord)
 
+	for slot in inventory:
+		if slot:
+			win.blit(pygame.image.load(slot.pic.picPath), (slot.pic.coord[0],slot.pic.coord[1]))
+
+
 	for row in loadGrid:
 		for tile in row:
 			if tile:
 				win.blit(pygame.image.load(tile.picPath),tile.coord)
+				if tile.plant:
+					win.blit(pygame.image.load(tile.plant.picPath),(tile.coord[0],tile.coord[1]-10))
+
 
 	if loadList['SELECTOR']: 
 		pictureObj = loadList['SELECTOR']
 		win.blit(pygame.image.load(pictureObj.picPath),pictureObj.coord)
 
+	removeList = []
 	for t in loadTextList:
+		if loadTextList[t].ff: 
+			if loadTextList[t].floatFade(): 
+				removeList.append(t)
 		t = loadTextList[t]
 		drawText(t.text,t.size,t.coord,t.color,t.font)
 
+	for t in removeList:
+		loadTextList.pop(t)
 
 
 def clickCheck(x,y):
-	global loadList, loadGrid, count
-		
+	global loadList, loadGrid, inventory, count, currentItem
 	for row in loadGrid:
 		for tile in row:
 			if tile:
 				pictureObj = tile
 				if pictureObj.y+5<y<pictureObj.bottomMost-10 and pictureObj.x+5<x<pictureObj.rightMost-10:
-					loadList['SELECTOR'] = graphic.Graphic('Selector.png',(pictureObj.x,pictureObj.y))
+					loadList['SELECTOR'] = graphic.Graphic('Selector.png',(pictureObj.x,pictureObj.y),False,'UI')
 					return tile
 
 	loadList['SELECTOR'] = None
+
+	for i in inventory:
+		if i:
+			pictureObj = i.pic
+			if pictureObj.y + 5 < y < pictureObj.bottomMost and pictureObj.x + 5 < x < pictureObj.rightMost:
+				return i
 
 	reverseKeys = list(loadList.keys())
 	reverseKeys.reverse()
@@ -159,11 +265,11 @@ def clickCheck(x,y):
 		else:
 			if pictureObj.clickable: 
 				if pictureObj.y+5<y<pictureObj.bottomMost-10 and pictureObj.x+5<x<pictureObj.rightMost-10:
-					if 'Countdown' in image:
-						loadList['SELECTOR'] = graphic.Graphic('TimerFrameSelector.png',(loadList['CountdownFrame'].x,loadList['CountdownFrame'].y))
-					else: loadList['SELECTOR'] = None
+					#if 'Countdown' in image:
+					#	loadList['SELECTOR'] = graphic.Graphic('TimerFrameSelector.png',(loadList['CountdownFrame'].x,loadList['CountdownFrame'].y,False,'UI'))
+					#else: loadList['SELECTOR'] = None
 					#print(f'Clicking on {pictureObj}')
-					return image
+					return pictureObj
 
 	loadList['SELECTOR'] = None
 	return None
@@ -179,10 +285,12 @@ def setTime(minutes=0,seconds=0, m='SET'):
 		seconds = (milliseconds%60000) //1000
 		if milliseconds<=0: return True
 		loadTextList['TIMER'].text = f'{minutes:02}:{seconds:02}'
+		loadTextList['TIMER1'].text = f'{minutes:02}:{seconds:02}'
 		return False
 	else: return False
 	tempTime = min((99*60)+59,tempTime)
 	loadTextList['TIMER'].text = f'{tempTime//60:02}:{tempTime%60:02}'
+	loadTextList['TIMER1'].text = f'{tempTime//60:02}:{tempTime%60:02}'
 
 
 def drawText(text='Sample Text',size=40,coord=(230,200),color=(82,123,219),font='Pixeled.ttf'):

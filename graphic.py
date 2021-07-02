@@ -2,24 +2,23 @@ import pygame
 
 class Graphic:
 
-	def __init__(self,picPath="ErrorIcon.png",coord=(0,0),clickable=False):
+	def __init__(self,picPath="ErrorIcon.png",coord=(0,0),clickable=False,toI='N/A'):
 		
 		try: 
 			self.img = pygame.image.load(picPath)
 			self.picPath = picPath
 		except: 
 			self.picPath = "ErrorIcon.png"
-		
+
+		self.toI = toI
 		self.coord = coord
 		self.setBoundaries(picPath, coord)
 		self.clickable = clickable
 		try: self.name
 		except: self.name = ""
 
-
 	def __str__(self):
 		return self.name if len(self.name)>0 else f"Name N/A - Picture Path: {self.picPath}"
-
 
 	def setBoundaries(self,picPath,coord):
 		self.x = x = coord[0]
@@ -35,10 +34,18 @@ class Graphic:
 		self.bottomMost = y+height
 		return (topLeft,topRight,botLeft,botRight) 
 
-
 	def moveGraphic(self,x,y):
 		self.x = x
 		self.y = y
 		self.coord = (x,y)
+
+	def isTile(self):
+		return 'TILE' in self.name.upper()
+
+	def isItem(self):
+		return 'ITEM' in self.name.upper()
+
+
+
 		
 

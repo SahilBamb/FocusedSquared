@@ -1,9 +1,14 @@
 from graphic import Graphic
+import plant
 
 class Gridtile(Graphic):
 
 	def __init__(self,x,y,kind='DIRT'):
 
+		self.plant = None
+
+		self.Gridx = x
+		self.Gridy = y
 		slx = 190
 		sly = 250
 		
@@ -49,14 +54,26 @@ class Gridtile(Graphic):
 			
 		coord = (x,y)
 
-		super().__init__(self.assignKind(kind),coord)
+		super().__init__(self.assignKind(kind),coord,True,'TILE')
 
 	def assignKind(self,kind):
 		tileTypes = {'DIRT':'DirtTile.png','GRASS':'GrassTile.png','OUTGRID':'OutlinedDirtBlock.png'}
 		if kind in tileTypes:
 			self.kind = kind
-			self.name = f'{kind}'
+			self.name = f'{kind} Tile'
 			return tileTypes[kind]
+
+	def plantOn(self,plant):
+		self.plant = plant
+
+	def grow(self,time=0):
+		if self.plant: 
+			if self.plant.grow():
+				val = self.plant.harvest
+				self.plant = None
+				return val
+
+
 		
 
 
