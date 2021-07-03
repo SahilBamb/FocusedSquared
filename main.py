@@ -18,8 +18,8 @@ def main():
 	global pygame,loadList, win, count, loadGrid, loadTextList, endTime, tempTime, currency, inventory, PlantingOnX, PlantingOnY, currentItem
 	global ux, uy, speed
 
-	ux = 70
-	uy = 373
+	ux = 10
+	uy = 115
 	speed = 1
 	#Intilize actual game
 	pygame.init()
@@ -28,7 +28,10 @@ def main():
 	loadList = {}
 
 	#Intilizie Inventory
-	inventory = [item.Item(graphic.Graphic('ITEMSeedInv.png',(20+(51*x),432),True,'ITEM'),plant.Plant(),'ITEM','SEED') for x in range(1)]
+	inventory = [item.Item(graphic.Graphic('ITEMSeedInv.png',(0,0),True,'ITEM'),plant.Plant(),'ITEM','SEED','Basic Seed') for x in range(9)]
+
+	#INVENTORY IS HARDCODED TO SLOT ITEMS NEED TO FIND A BETTER
+	#A suggestion would be to
 
 	#set background
 	loadList['Background'] = graphic.Graphic("Background.png",(0,0),False,'UI')
@@ -41,12 +44,14 @@ def main():
 	#Inventory Frame
 	loadList['Inventory'] = graphic.Graphic("InventoryFrame.png",(0,411),True,'UI')
 
-	loadList['Clover'] = graphic.Graphic("Clovercon.png",(100,36),True,'UI')
-	loadList['Clover'].name = 'Clover'
+	loadList['Plus'] = graphic.Graphic("Plus.png",(100,36),True,'UI')
+	loadList['Plus'].name = 'Plus'
 	loadList['Heart'] = graphic.Graphic("HeartIcon.png",(100,62),True,'UI')
 	loadList['Heart'].name = 'Heart'
 	loadList['Shell'] = graphic.Graphic("Shell.png", (100, 85), True,'UI')
 	loadList['Shell'].name = 'Shell'
+
+	#loadList['Store'] = graphic.Graphic("Store.png", (10, 115), False,'UI')
 
 	#Currency
 	loadList['CurrencyCoin'] = graphic.Graphic("Coins.png",(16,368),False,'UI')
@@ -80,12 +85,26 @@ def main():
 	pygame.mouse.set_cursor(*pygame.cursors.tri_left)
 	pygame.display.set_icon(pygame.image.load('logo.png') )
 
+def TextBubble(t='G'):
+	global loadTextList, loadList
+	files = {'G':'GenericLines.txt','F':'FailLines.txt'}
+	txt = open(files[t],'r') if t in files else open(files['G'],'r')
+	txtList = txt.readlines()
+	phrase = txtList[random.randint(0,len(txtList)-1)].strip()
+	txt.close()
+
+
+	loadList['Text'] = graphic.Graphic("SmallerTextBox.png", (153, 133), False, 'UI',50)
+	loadTextList['Text'] = textgraphic.Textgraphic(phrase[0:40], 10, (163, 140), (0, 0, 0), 'iflash-502.ttf',50)
+	if len(phrase)>39: loadTextList['Text2'] = textgraphic.Textgraphic(phrase[40:78], 10, (163, 152), (0, 0, 0), 'iflash-502.ttf',50)
+
 
 def update(): 
 	global pygame, count, win, loadList, loadGrid, endTime, tempTime, inventory
 	global ux, uy
 
 	#loadList['Test'].coord = (ux, uy)
+	#loadTextList['Test'].coord = (ux, uy)
 
 	#iterate count
 	count = count+1 if count<999 else 0
@@ -101,7 +120,8 @@ def update():
 			print("Issa growin!")
 			growTiles(loadGrid,1)
 		if setTime(0,0,'UPDAT'):
-			tempTime = 45
+			if not random.randint(0,10): TextBubble('G')
+			tempTime = 0
 			endTime = None
 
 	#time delay
@@ -136,11 +156,12 @@ def inputCheck(i='None'):
 					if clickingOn.toI == 'UI':
 						if not endTime:
 							if clickingOn.name=='Heart':
-								setTime(15, 0, 'INCR')
+								setTime(0, 0, 'INIT')
 							elif clickingOn.name == 'Shell':
 								setTime(0, 0, 'SET')
-							elif clickingOn.name == 'Clover':
-								setTime(0, 0, 'INIT')
+							elif clickingOn.name == 'Plus':
+								setTime(15, 0, 'INCR')
+
 
 					elif clickingOn.toI=='TILE':
 						Gridx = clickingOn.Gridx
@@ -181,39 +202,20 @@ def inputCheck(i='None'):
 							pass
 
 					print(clickingOn.toI)
-				'''
-				clickingOn = clickCheck(x,y)
-				if clickingOn:
-					if clickingOn.isTile():
-						if PlantingOnX and PlantingOny:
-							Gridx = clickingOn.Gridx
-							PlantingOnX = Gridx
-							Gridy = clickingOn.Gridy
-							PlantingOny = Gridx
-							print(f"Going to plant on {Gridx}, {Gridy}")
-						else:
-							PlantingOnX = PlantingOny = None
-
-						if clickingOn.plant:
-							h = loadGrid[Gridx][Gridy].grow()
-							if h: 
-								loadTextList['Money'] = textgraphic.Textgraphic(f'+{h}',8,(x-5,y-5),RGBColors.getRandomColor())
-								loadTextList['Money'].ff=True
-						else:
-							loadGrid[Gridx][Gridy].plantOn(plant.Plant)
-						'''
 
 			if event.type==pygame.KEYDOWN:
 				if event.key == pygame.K_RIGHT: ux+=speed
 				elif event.key == pygame.K_LEFT: ux-=speed
-				#if event.key == pygame.K_ESCAPE:
-					#tempTime = 45
-					#endTime = None
+				if event.key == pygame.K_ESCAPE:
+					setTime(0,0,'SET')
+					if endTime and not random.randint(0, 10): TextBubble('F')
+					endTime = None
 				if not endTime:
 					if event.key == pygame.K_UP:
+						uy-=speed
 						setTime(0,3,'INCR')
-						#setTime(1,0,'INCR')
-					elif event.key == pygame.K_DOWN: uy+=speed
+					elif event.key == pygame.K_DOWN:
+						uy+=speed
 						#setTime(-1,0,'INCR')
 					elif event.key == K_0: setTime(0,0,'SET')
 					elif event.key == K_1: setTime(15,0,'INCR')
@@ -230,14 +232,30 @@ def inputCheck(i='None'):
 
 def loadGraphics(loadList,loadGrid, loadTextList, inventory):
 	global pygame, win
+
+	removeList = []
+
 	for image in loadList:
 		pictureObj = loadList[image]
-		if not pictureObj: continue
-		else:
+		if pictureObj:
+			pictureObj.iterate()
+			if pictureObj.time==0: removeList.append(image)
 			win.blit(pygame.image.load(pictureObj.picPath),pictureObj.coord)
-	for slot in inventory:
+	for image in removeList:
+		loadList.pop(image)
+
+	removeList = []
+	for index in range(len(inventory)):
+		slot = inventory[index]
 		if slot:
-			win.blit(pygame.image.load(slot.pic.picPath), (slot.pic.coord[0],slot.pic.coord[1]))
+			#(20 + (51 * x), 432)
+			slot.pic.iterate()
+			if slot.pic.time == 0: removeList.append(index)
+			win.blit(pygame.image.load(slot.pic.picPath), (20 + (51*index), 432))
+	for slot in removeList:
+		inventory[index]=None
+
+	removeList = []
 	for row in loadGrid:
 		for tile in row:
 			if tile:
@@ -245,45 +263,59 @@ def loadGraphics(loadList,loadGrid, loadTextList, inventory):
 				if tile.plant:
 					win.blit(pygame.image.load(tile.plant.picPath),(tile.coord[0],tile.coord[1]-10))
 
-
 	if loadList['SELECTOR']: 
 		pictureObj = loadList['SELECTOR']
 		win.blit(pygame.image.load(pictureObj.picPath),pictureObj.coord)
 
 	removeList = []
 	for t in loadTextList:
-		if loadTextList[t].ff: 
-			if loadTextList[t].floatFade(): 
+		pictureObj = loadTextList[t]
+		pictureObj.iterate()
+		if pictureObj.time == 0: removeList.append(t)
+
+		if pictureObj.ff:
+			if pictureObj.floatFade():
 				removeList.append(t)
-		t = loadTextList[t]
-		drawText(t.text,t.size,t.coord,t.color,t.font)
+
+		drawText(pictureObj.text,pictureObj.size,pictureObj.coord,pictureObj.color,pictureObj.font)
 
 	for t in removeList:
 		loadTextList.pop(t)
 
 
 def clickCheck(x,y):
-	global loadList, loadGrid, inventory, count, currentItem
-	for row in loadGrid:
-		for tile in row:
-			if tile:
-				pictureObj = tile
-				if pictureObj.y+5<y<pictureObj.bottomMost-10 and pictureObj.x+5<x<pictureObj.rightMost-10:
-					if currentItem and currentItem.itemType=='SEED':
-						loadList['SELECTOR'] = graphic.Graphic('PSelector.png', (pictureObj.x, pictureObj.y), False,'UI')
-					elif pictureObj.plant and pictureObj.plant.ReadytoHarvest:
-						loadList['SELECTOR'] = graphic.Graphic('HSelector.png', (pictureObj.x, pictureObj.y), False,'UI')
-					else:
-						loadList['SELECTOR'] = graphic.Graphic('Selector.png', (pictureObj.x, pictureObj.y), False,'UI')
-					return tile
+	global loadList, loadGrid, inventory, count, currentItem, loadTextList
+	if 180<=y<=380:
+		for row in loadGrid:
+			for tile in row:
+				if tile:
+					pictureObj = tile
+					if pictureObj.y+5<y<pictureObj.bottomMost-10 and pictureObj.x+5<x<pictureObj.rightMost-10:
+						if currentItem and currentItem.itemType=='SEED':
+							loadList['SELECTOR'] = graphic.Graphic('PSelector.png', (pictureObj.x, pictureObj.y), False,'UI')
+						elif pictureObj.plant and pictureObj.plant.ReadytoHarvest:
+							loadList['SELECTOR'] = graphic.Graphic('HSelector.png', (pictureObj.x, pictureObj.y), False,'UI')
+						else:
+							loadList['SELECTOR'] = graphic.Graphic('Selector.png', (pictureObj.x, pictureObj.y), False,'UI')
+						return tile
 
 	loadList['SELECTOR'] = None
-
-	for i in inventory:
-		if i:
-			pictureObj = i.pic
-			if pictureObj.y + 5 < y < pictureObj.bottomMost and pictureObj.x + 5 < x < pictureObj.rightMost:
-				return i
+	if 'ItemLine1' in loadTextList and not loadList['SELECTOR']:
+		removeList = [p for p in loadTextList if 'Item' in p]
+		for p in removeList: loadTextList.pop(p)
+	if y>=420:
+		for index in range(len(inventory)):
+			i = inventory[index]
+			if i:
+				pictureObj = i.pic
+				pictureObj.setBoundaries(pictureObj.picPath,(20+(51*index),432))
+				if pictureObj.y + 5 < y < pictureObj.bottomMost and pictureObj.x + 5 < x < pictureObj.rightMost:
+					xShift = 50 if x<250 else -50
+					loadList['SELECTOR'] = graphic.Graphic('ItemDescr.png', (pictureObj.x+xShift, pictureObj.y), False,'ItemUI')
+					loadTextList['ItemLine1'] = textgraphic.Textgraphic(i.name, 8, (loadList['SELECTOR'].x + 7, loadList['SELECTOR'].y + 5), (0, 0, 0), "iflash-502.ttf")
+					for n,line in enumerate(i.descrList):
+						loadTextList[f'ItemLineDescr{n}'] = textgraphic.Textgraphic(line, 8, (loadList['SELECTOR'].x + 7, loadList['SELECTOR'].y + 20 + (10*n)), (0, 0, 0), "iflash-502.ttf")
+					return i
 
 	reverseKeys = list(loadList.keys())
 	reverseKeys.reverse()
@@ -293,10 +325,6 @@ def clickCheck(x,y):
 		else:
 			if pictureObj.clickable: 
 				if pictureObj.y+5<y<pictureObj.bottomMost-10 and pictureObj.x+5<x<pictureObj.rightMost-10:
-					#if 'Countdown' in image:
-					#	loadList['SELECTOR'] = graphic.Graphic('TimerFrameSelector.png',(loadList['CountdownFrame'].x,loadList['CountdownFrame'].y,False,'UI'))
-					#else: loadList['SELECTOR'] = None
-					#print(f'Clicking on {pictureObj}')
 					return pictureObj
 
 	loadList['SELECTOR'] = None

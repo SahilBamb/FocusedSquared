@@ -2,7 +2,7 @@ import pygame
 
 class Graphic:
 
-	def __init__(self,picPath="ErrorIcon.png",coord=(0,0),clickable=False,toI='N/A'):
+	def __init__(self,picPath="ErrorIcon.png",coord=(0,0),clickable=False,toI='N/A',time=-1):
 		
 		try: 
 			self.img = pygame.image.load(picPath)
@@ -10,6 +10,7 @@ class Graphic:
 		except: 
 			self.picPath = "ErrorIcon.png"
 
+		self.time = time
 		self.toI = toI
 		self.coord = coord
 		self.setBoundaries(picPath, coord)
@@ -32,7 +33,8 @@ class Graphic:
 		botRight = (x+width,y+height)
 		self.rightMost = x+width
 		self.bottomMost = y+height
-		return (topLeft,topRight,botLeft,botRight) 
+		self.bouncing = False
+		return (topLeft,topRight,botLeft,botRight)
 
 	def moveGraphic(self,x,y):
 		self.x = x
@@ -44,6 +46,9 @@ class Graphic:
 
 	def isItem(self):
 		return 'ITEM' in self.name.upper()
+
+	def iterate(self):
+		self.time-=1
 
 
 
