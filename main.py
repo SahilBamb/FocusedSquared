@@ -15,7 +15,7 @@ from pygame.locals import *
 
 
 def main():
-	global pygame,loadList, win, count, loadGrid, loadTextList, endTime, tempTime, currency, inventory, PlantingOnX, PlantingOnY, currentItem
+	global pygame,loadList, win, count, loadGrid, loadTextList, endTime, tempTime, currency, inventory, PlantingOnX, PlantingOnY, currentItem, raining
 	global ux, uy, speed
 
 	ux = 10
@@ -28,7 +28,8 @@ def main():
 	loadList = {}
 
 	#Intilizie Inventory
-	inventory = [item.Item(graphic.Graphic('ITEMSeedInv.png',(0,0),True,'ITEM'),plant.Plant(),'ITEM','SEED','Basic Seed') for x in range(9)]
+	#inventory = [item.Item(graphic.Graphic('ITEMSeedInv.png',(0,0),True,'ITEM'),plant.Plant(),'ITEM','SEED','Basic Seed') for x in range(9)]
+	inventory = [item.BasicSeed(),item.BlueSeed(),item.PinkSeed()]
 
 	#INVENTORY IS HARDCODED TO SLOT ITEMS NEED TO FIND A BETTER
 	#A suggestion would be to
@@ -71,6 +72,7 @@ def main():
 
 	currentItem = None
 	currency = 0
+	raining = True
 
 	loadTextList['Currency2'] = textgraphic.Textgraphic(f"${currency}", 15, (72,375), (0,0,0), 'Pixeled.ttf')
 	loadTextList['Currency'] = textgraphic.Textgraphic(f"${currency}", 15, (70,373), RGBColors.Gold, 'Pixeled.ttf')
@@ -93,14 +95,12 @@ def TextBubble(t='G'):
 	phrase = txtList[random.randint(0,len(txtList)-1)].strip()
 	txt.close()
 
-
 	loadList['Text'] = graphic.Graphic("SmallerTextBox.png", (153, 133), False, 'UI',50)
 	loadTextList['Text'] = textgraphic.Textgraphic(phrase[0:40], 10, (163, 140), (0, 0, 0), 'iflash-502.ttf',50)
 	if len(phrase)>39: loadTextList['Text2'] = textgraphic.Textgraphic(phrase[40:78], 10, (163, 152), (0, 0, 0), 'iflash-502.ttf',50)
 
-
 def update(): 
-	global pygame, count, win, loadList, loadGrid, endTime, tempTime, inventory
+	global pygame, count, win, loadList, loadGrid, endTime, tempTime, inventory, raining
 	global ux, uy
 
 	#loadList['Test'].coord = (ux, uy)
@@ -115,10 +115,20 @@ def update():
 	#load all images
 	loadGraphics(loadList, loadGrid, loadTextList, inventory)
 
+	if raining:
+		if not random.randint(0,500):
+			print("it stopped raining!")
+			raining = False
+	else:
+		if not random.randint(0,2000):
+			print("It started raining!")
+			raining = True
+
 	if endTime:
 		if ((endTime-pygame.time.get_ticks()) % 60000 ) < 100:
 			print("Issa growin!")
-			growTiles(loadGrid,1)
+			if raining: growTiles(loadGrid,4)
+			else: growTiles(loadGrid,1)
 		if setTime(0,0,'UPDAT'):
 			if not random.randint(0,10): TextBubble('G')
 			tempTime = 0
@@ -231,7 +241,7 @@ def inputCheck(i='None'):
 				
 
 def loadGraphics(loadList,loadGrid, loadTextList, inventory):
-	global pygame, win
+	global pygame, win, count, raining
 
 	removeList = []
 
@@ -282,6 +292,9 @@ def loadGraphics(loadList,loadGrid, loadTextList, inventory):
 	for t in removeList:
 		loadTextList.pop(t)
 
+	if raining:
+		pn = ['Rain1.png','Rain2.png','Rain3.png']
+		win.blit(pygame.image.load(pn[count%3]), (0,0))
 
 def clickCheck(x,y):
 	global loadList, loadGrid, inventory, count, currentItem, loadTextList
