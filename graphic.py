@@ -2,19 +2,21 @@ import pygame
 
 class Graphic:
 
-	def __init__(self,picPath="ErrorIcon.png",coord=(0,0),clickable=False,toI='N/A',time=-1):
-		
+	def __init__(self,picPath="ErrorIcon.png",coord=(0,0),clickable=False,toI='N/A',time=-1, frame = 0):
+		self.frame = frame
+		self.frames = [picPath] if type(picPath)==str else picPath
 		try: 
-			self.img = pygame.image.load(picPath)
-			self.picPath = picPath
+			#self.img = pygame.image.load(picPath)
+			self.picPath = self.frames[0]
 		except: 
 			self.picPath = "ErrorIcon.png"
 
 		self.time = time
 		self.toI = toI
 		self.coord = coord
-		self.setBoundaries(picPath, coord)
+		self.setBoundaries(self.picPath, coord)
 		self.clickable = clickable
+
 		try: self.name
 		except: self.name = ""
 
@@ -24,7 +26,8 @@ class Graphic:
 	def setBoundaries(self,picPath,coord):
 		self.x = x = coord[0]
 		self.y = y = coord[1]
-		surface = self.img
+		try: surface = pygame.image.load(picPath)
+		except: print(picPath)
 		width = surface.get_width()
 		height = surface.get_height()
 		topLeft = coord
@@ -49,6 +52,9 @@ class Graphic:
 
 	def iterate(self):
 		self.time-=1
+		self.frame = self.frame+1 if self.frame<len(self.frames)-1 else 0
+		if len(self.frames)>1:
+			self.picPath=self.frames[self.frame]
 
 
 

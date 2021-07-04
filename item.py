@@ -6,6 +6,7 @@ class Item:
 
 	def __init__(self, pic=None, planite=None, toI = 'NA', itemType='NA',itemName='NA',descrList=['']):
 		self.pic = pic
+		self.cost = 1
 		self.plant = planite
 		self.toI = toI
 		self.itemType = itemType

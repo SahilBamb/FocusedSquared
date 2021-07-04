@@ -20,3 +20,6 @@ class Textgraphic(Graphic):
 		self.coord = (self.coord[0],self.coord[1]-3)
 		if self.life<=0: return True
 		
+
+	def iterate(self):
+		self.time-=1
