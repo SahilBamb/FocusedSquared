@@ -54,7 +54,7 @@ class Gridtile(Graphic):
 			
 		coord = (x,y)
 
-		super().__init__(self.assignKind(kind),coord,True,'TILE')
+		super().__init__(f'TILE{x}{y}',self.assignKind(kind),coord,True,'TILE')
 
 	def assignKind(self,kind):
 		tileTypes = {'DIRT':'DirtTile.png','GRASS':'GrassTile.png','OUTGRID':'OutlinedDirtBlock.png'}
@@ -67,8 +67,13 @@ class Gridtile(Graphic):
 		self.plant = plant
 
 	def grow(self,time=0):
-		if self.plant: 
+		if self.plant:
 			self.plant.grow(time)
+
+	def getOnTop(self):
+		allOnTop = []
+		if self.plant: allOnTop.append(self.plant)
+		return allOnTop
 
 	def harvest(self):
 		if self.plant and self.plant.ReadytoHarvest:
