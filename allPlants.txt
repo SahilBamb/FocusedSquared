@@ -1,0 +1,3 @@
+#harvest(i,r) TimeToHarvest(m) name Stages
+10 5 5 BluePlant
+60r 20 10 OrangePlant

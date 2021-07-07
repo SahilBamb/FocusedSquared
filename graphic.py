@@ -41,7 +41,6 @@ class Graphic:
 			width = surface.get_width()
 			height = surface.get_height()
 		except:
-			print(picPath)
 			width = 0
 			height = 0
 		topLeft = coord
@@ -60,14 +59,20 @@ class Graphic:
 	#True if it still exists, false if it doesn't
 	def iterate(self):
 		if self.time>0: self.time-=1
-		if self.moving: self.moveGraphic(self.x+self.moving[0],self.y+self.moving[1])
-		if self.toI!='TEXT':
+		if self.moving:
+			self.moveGraphic(self.x+self.moving[0],self.y+self.moving[1])
+		if 'TEXT' not in self.toI:
 			self.frame = self.frame+1 if self.frame<len(self.frames)-1 else 0
 			if len(self.frames)>1: self.picPath=self.frames[self.frame]
 		return False if self.time==0 else True
 
 	def getOnTop(self):
 		return []
+
+	def changeTOI(self,toI):
+		self.toI = toI
+		return self
+
 
 
 		
