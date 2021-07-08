@@ -58,7 +58,8 @@ class Graphic:
 
 	#True if it still exists, false if it doesn't
 	def iterate(self):
-		if self.time>0: self.time-=1
+		if self.time>0:
+			self.time-=1
 		if self.moving:
 			self.moveGraphic(self.x+self.moving[0],self.y+self.moving[1])
 		if 'TEXT' not in self.toI:

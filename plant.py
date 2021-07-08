@@ -49,6 +49,22 @@ class PinkPlant(Plant):
 		stage = 0
 		super().__init__(name, Stages[stage], stage, TimeToHarvest, harvest, Stages)
 
+class YellowPlant(Plant):
+
+	def __init__(self,TimeToHarvest,harvest):
+		Stages = 'YellowPlant0.png', 'YellowPlant1.png', 'YellowPlant2.png', 'YellowPlant3.png', 'YellowPlant4.png'
+		name = 'YellowPlant'
+		stage = 0
+		super().__init__(name, Stages[stage], stage, TimeToHarvest, harvest, Stages)
+
+class GoldPlant(Plant):
+
+	def __init__(self,TimeToHarvest,harvest):
+		Stages = 'GoldPlant0.png', 'GoldPlant1.png', 'GoldPlant2.png', 'GoldPlant3.png', 'GoldPlant4.png'
+		name = 'GoldPlant'
+		stage = 0
+		super().__init__(name, Stages[stage], stage, TimeToHarvest, harvest, Stages)
+
 class importPlant(Plant):
 
 	def __init__(self,name):

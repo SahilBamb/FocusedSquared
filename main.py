@@ -1,6 +1,5 @@
-
+import store
 import pygame
-
 import booster
 import inputControl
 import graphic
@@ -12,6 +11,7 @@ import RGBColors
 import item
 import pickle
 import session
+import powerup
 from pygame.locals import *
 from datetime import date
 
@@ -20,7 +20,7 @@ from datetime import date
 
 
 def main():
-	global pygame,loadList, win, count, loadGrid, loadTextList, endTime, tempTime, currency, inventory, currentItem, loadAboveGrid
+	global pygame,loadList, win, count, loadGrid, loadTextList, endTime, tempTime, currency, inventory, currentItem, loadAboveGrid, items
 	global storeInventory, sessionsList, ux, uy
 
 	#Intilize actual game
@@ -31,16 +31,17 @@ def main():
 	loadAboveGrid = {}
 	loadTextList = {}
 
+	items = {'BasicSeed': item.BasicSeed(), 'BlueSeed': item.BlueSeed(), 'PinkSeed': item.PinkSeed()}
+
 	#Intilizie Inventory
 
-	inventory = [booster.BasicBooster(), None, None]
+	inventory = [booster.GuacBooster() for x in range(9)]
+	#inventory[0] = powerup.TileExpand()
 	EnterStore()
 	InventoryUpdate()
 
 	#INVENTORY IS HARDCODED TO SLOT ITEMS NEED TO FIND A BETTER
 	#A suggestion would be to
-
-
 
 	StoreInventory = []
 
@@ -68,9 +69,14 @@ def main():
 	loadGrid = [[None for x in range(10)] for y in range(10)]
 	for x in range(10):
 		for y in range(10):
-			loadGrid[x][y] = gridtile.Gridtile(x,y,'OUTGRID')
-			loadGrid[x][y].name += f' x:{x},y:{y}'
+			loadGrid[x][y] = None #gridtile.Gridtile(x, y, 'OUTGRID')
+			#loadGrid[x][y].name += f' x:{x},y:{y}'
 			#loadGrid[x][y].plantOn(plant.Plant())
+
+	loadGrid[3][3] = gridtile.Gridtile(3, 3, 'OUTGRID')
+	loadGrid[3][4] = gridtile.Gridtile(3, 4, 'OUTGRID')
+	loadGrid[4][3] = gridtile.Gridtile(4, 3, 'OUTGRID')
+	loadGrid[4][4] = gridtile.Gridtile(4, 4, 'OUTGRID')
 
 	tempTime = 45*60
 	endTime = None
@@ -78,8 +84,10 @@ def main():
 	loadTextList.update({'TIMER1': textgraphic.Textgraphic('TIMER1',f'{tempTime//60:02}:{tempTime%60:02}',100,(135,12),RGBColors.DDG,'iflash-502.ttf')})
 
 	currentItem = None
-	currency = 0
+	currency = 3
 
+	#Load From Savefile
+	#saveLoad('L')
 
 	loadTextList['Currency2'] = textgraphic.Textgraphic('Currency2',f"${currency}", 15, (72,375), (0,0,0), 'Pixeled.ttf')
 	loadTextList['Currency'] = textgraphic.Textgraphic('Currency',f"${currency}", 15, (70,373), RGBColors.Gold, 'Pixeled.ttf')
@@ -95,39 +103,36 @@ def main():
 	pygame.display.set_icon(pygame.image.load('logo.png') )
 	sessionsList = []
 
-	#Load From Savefile
-	#saveLoad('L')
 
+def EnterStore(t='Red Head Store'):
+	global loadAboveGrid, loadTextList, storeInventory, items
 
-
-
-def EnterStore(t='BASIC'):
-	global loadAboveGrid, loadTextList, storeInventory
-
-	if 'Store' not in loadAboveGrid:
-		loadAboveGrid['Store'] = graphic.Graphic('Store', 'RedHeadStore.png', (10,133), False, 'UI')
-		loadTextList['StoreText1'] = textgraphic.Textgraphic('StoreText1','Hey there! Welcome to my store!',8,(75,190),RGBColors.DGRAY,'iflash-502.ttf')
-		loadTextList['StoreText2'] = textgraphic.Textgraphic('StoreText1','Let me know if you need anything!',8,(75,198),RGBColors.DGRAY,'iflash-502.ttf')
-
-		storeInventory = [item.BasicSeed(),item.BlueSeed(),item.PinkSeed()]
-		InventoryUpdate()
-		for i in storeInventory:
-			i.toI= 'STOREITEM'
-
-		loadTextList['StoreText3'] = textgraphic.Textgraphic('Option1', 'IM GOOD! :)', 8, (80, 207), RGBColors.GRAY, 'iflash-502.ttf',-1,True).changeTOI('STORETEXT')
-		loadTextList['StoreText4'] = textgraphic.Textgraphic('Option2', 'WHAT DO YOU SUGGEST?', 8, (80, 214), RGBColors.GRAY,'iflash-502.ttf',-1,True).changeTOI('STORETEXT')
-		loadTextList['StoreText5'] = textgraphic.Textgraphic('Option3', 'LEAVE ME ALONE', 8, (80, 221), RGBColors.GRAY, 'iflash-502.ttf',-1,True).changeTOI('STORETEXT')
-
-	else:
+	if t == 'EXIT' and 'Store' in loadAboveGrid:
 		loadAboveGrid.pop('Store')
 		loadTextList.pop('StoreText1')
 		loadTextList.pop('StoreText2')
-
-		storeInventory = [None]
-
+		storeInventory = []
 		loadTextList.pop('StoreText3')
 		loadTextList.pop('StoreText4')
 		loadTextList.pop('StoreText5')
+
+	else:
+		loadStore = store.importStore(t)
+		if loadStore.working:
+			loadAboveGrid['Store'] = graphic.Graphic('Store', loadStore.storeImage, (10,133), False, 'UI')
+			loadTextList['StoreText1'] = textgraphic.Textgraphic('StoreText1',loadStore.storeText1,8,(75,187),RGBColors.DGRAY,'iflash-502.ttf')
+			loadTextList['StoreText2'] = textgraphic.Textgraphic('StoreText2',loadStore.storeText2,8,(75,195),RGBColors.DGRAY,'iflash-502.ttf')
+			items = {'BasicSeed':item.BasicSeed(),'BlueSeed':item.BlueSeed(),'PinkSeed':item.PinkSeed(),'YellowSeed':item.YellowSeed(),'BasicBooster':booster.BasicBooster()}
+			posSI = [items[i.strip('\n')] for i in loadStore.storeInventory]
+			storeInventory = []
+			while not (2<=len(storeInventory)<=3):
+				storeInventory = list(set([x for x in posSI if random.randint(0,1)]))
+			InventoryUpdate()
+			for i in storeInventory: i.toI= 'STOREITEM'
+			loadTextList['StoreText3'] = textgraphic.Textgraphic('Option1', loadStore.responseOptions1, 8, (80, 207), RGBColors.GRAY, 'iflash-502.ttf',-1,True).changeTOI('STORETEXT')
+			loadTextList['StoreText4'] = textgraphic.Textgraphic('Option2', loadStore.responseOptions2, 8, (80, 214), RGBColors.GRAY,'iflash-502.ttf',-1,True).changeTOI('STORETEXT')
+			loadTextList['StoreText5'] = textgraphic.Textgraphic('Option3', loadStore.responseOptions3, 8, (80, 221), RGBColors.GRAY, 'iflash-502.ttf',-1,True).changeTOI('STORETEXT')
+
 
 #Adds item to global inventory, updates their location information
 def InventoryUpdate(itemToBeAdded=[]):
@@ -165,17 +170,16 @@ def TextBubble(t='G'):
 		phrase = txtList[random.randint(0,len(txtList)-1)].strip()
 		txt.close()
 
-	loadList['Text'] = graphic.Graphic('Text',"SmallerTextBox.png", (153, 133), False, 'UI',50)
-	loadTextList['Text1'] = textgraphic.Textgraphic('Text1',phrase[0:40], 10, (163, 140), (0, 0, 0), 'iflash-502.ttf',50)
-	if len(phrase)>39: loadTextList['Text2'] = textgraphic.Textgraphic('Text2',phrase[40:78], 10, (163, 152), (0, 0, 0), 'iflash-502.ttf',50)
+	loadList['Text'] = graphic.Graphic('Text', "SmallerTextBox.png", (153, 133), False, 'UI', 50)
+	loadTextList['Text1'] = textgraphic.Textgraphic('Text1',phrase[0:40], 10, (163, 140), (0, 0, 0), 'iflash-502.ttf',25)
+	if len(phrase)>39: loadTextList['Text2'] = textgraphic.Textgraphic('Text2',phrase[40:78], 10, (163, 152), (0, 0, 0), 'iflash-502.ttf',25)
+	#The loadList is being iterated twice
 
 def update():
 	global pygame, count, win, loadList, loadGrid, endTime, tempTime, inventory, sessionsList
 	global ux, uy
 
 	#loadList['Test'].coord = (ux, uy)
-	#loadTextList['StoreText2'].coord = (ux, uy)
-	#loadAboveGrid['Store'].coord = (ux,uy)
 
 	#iterate count
 	count = count+1 if count<999 else 0
@@ -193,9 +197,9 @@ def update():
 			if 'Weather' in loadAboveGrid: growTiles(loadGrid,4)
 			else: growTiles(loadGrid,1)
 		if setTime(0,0,'UPDAT'):
+			print(tempTime//60)
+			successfulSession(tempTime//60)
 			saveSession(tempTime//60)
-			getItems()
-			InventoryUpdate()
 			if not random.randint(0,10): TextBubble('S')
 			tempTime = 0
 			endTime = None
@@ -206,9 +210,15 @@ def update():
 	#update the screen
 	pygame.display.update()
 
-#lol shouldn't exist please delete
-def getItems():
-	InventoryUpdate([item.BasicSeed(),item.BlueSeed(),item.PinkSeed()][random.randint(0,2)])
+def successfulSession(time):
+	global curency
+	if time > 60:
+		EnterStore('Red Head Store')
+	elif time > 90 and currency>25:
+		EnterStore('Green Eyed Store')
+
+	InventoryUpdate()
+
 
 def saveSession(t):
 	global sessionsList
@@ -220,7 +230,7 @@ def saveSession(t):
 def weatherMangement(loadAboveGrid, loadList):
 	if 'Weather' not in loadAboveGrid:
 		if not random.randint(0,5000):
-			duration = random.randint(100,1000)
+			duration = random.randint(1000,10000)
 			loadAboveGrid['Weather'] = graphic.Graphic('Weather',['Rain1.png', 'Rain2.png', 'Rain3.png'], (0, 0), False, 'UI',duration)
 			TextBubble("it started raining!")
 		elif not random.randint(0, 10000):
@@ -235,6 +245,28 @@ def growTiles(loadGrid,timePassed):
 		for tile in row:
 			if tile: tile.grow(timePassed)
 
+def PassiveItemClick(clickCheck):
+	global loadList,loadAboveGrid,loadTextList, currency
+	if not clickCheck: return clickCheck
+	if 'ITEM' in clickCheck.toI:
+		if 'ITEM'==clickCheck.toI:
+			x = clickCheck.pic.x
+			x = x+50 if x<250 else x-85
+			y = clickCheck.pic.y
+			y = y-5
+		if 'STOREITEM'==clickCheck.toI:
+			x = clickCheck.pic.x
+			x = x-20
+			y = clickCheck.pic.y
+			y = y+59
+
+		loadAboveGrid['ItemDescrFrame'] = graphic.Graphic('ItemDescrFrame','ItemDescr.png',(x,y),False,'UI',1)
+		for i,line in enumerate(clickCheck.descrList):
+			if 'ItemType' in line: continue
+			color = RGBColors.DGRAY
+			if 'cost' in line and clickCheck.cost>currency: color = RGBColors.Red
+			loadTextList[f'ItemDescrLine{i}'] = textgraphic.Textgraphic(f'ItemDescrLine{i}',line,8,(x+7,y+7+(10*i)),color,'iflash-502.ttf',1)
+
 #Needs Fixing... a lot of fixing...
 def inputCheck(i='None'):
 	global pygame, win,count, loadList, endTime, loadGrid, loadTextList, loadAboveGrid, currentItem, inventory, storeInventory, tempTime, currency
@@ -245,7 +277,7 @@ def inputCheck(i='None'):
 	else:
 		x = pygame.mouse.get_pos()[0]
 		y = pygame.mouse.get_pos()[1]
-		clickCheck(x,y)
+		PassiveItemClick(clickCheck(x,y))
 
 		for event in pygame.event.get():
 			if event.type==pygame.QUIT: count=1001
@@ -260,13 +292,14 @@ def inputCheck(i='None'):
 						if not endTime:
 							if clickingOn.name=='Heart' and tempTime>0: setTime(0, 0, 'INIT')
 							elif clickingOn.name == 'Shell':
-								EnterStore()
+								EnterStore('EXIT')
 								#setTime(0, 0, 'SET')
 							elif clickingOn.name == 'Plus': setTime(15, 0, 'INCR')
 
 					elif clickingOn.toI=='TILE':
 						Gridx = clickingOn.Gridx
 						Gridy = clickingOn.Gridy
+						print(f'x is {Gridx} and y is {Gridy}')
 
 						#If I'm holding a seed and clicking a tile
 						if currentItem and currentItem.itemType=='SEED':
@@ -291,10 +324,17 @@ def inputCheck(i='None'):
 						if clickingOn.toI == 'STOREITEM':
 							if clickingOn.cost <= currency and None in inventory:
 								InventoryUpdate([clickingOn])
-								moneyGain(-clickingOn.cost, x, y)
+								moneyGain(-clickingOn.cost)
 								print('Bought! Added to inventory')
 							else:
 								print("Do you have enough money and space?")
+
+						elif clickingOn.itemType=='Powerup':
+
+							if clickingOn.name=='Tile Expand':
+								print('tile though')
+								if expandGrid():
+									inventory[clickingOn.invSlot] = None
 
 						# #Will pickup Seed and put it in currentItem
 						elif clickingOn.itemType=='SEED':
@@ -317,6 +357,26 @@ def inputCheck(i='None'):
 			if event.type==pygame.KEYDOWN:
 				KeyInputCheck(event.key)
 
+def expandGrid():
+	global loadGrid
+	for x in range(10):
+		for y in range(10):
+			m = [[x,y+1],[x+1,y],[x+1,y+1],[x,y-1],[x-1,y],[x-1,y-1]]
+			random.shuffle(m)
+			#print(f' m is {m}')
+			try:
+				if not loadGrid[x][y]:
+					#(loadGrid[x][y+1] or loadGrid[x+1][y] or loadGrid[x+1][y+1] or loadGrid[x][y-1] or loadGrid[x-1][y] or loadGrid[x-1][y-1]):
+					for x1,y1 in m:
+						if loadGrid[x1][y1] and random.randint(0,1) and random.randint(0,1):
+							loadGrid[x][y] = gridtile.Gridtile(x,y,'OUTGRID')
+							#print(f'x is {x} and y is {y}')
+							return True
+			except:
+				print('That was out of the grid')
+	return False
+
+
 def moneyGain(m,x=None,y=None):
 	global loadTextList, currency
 	currency += m
@@ -328,12 +388,8 @@ def moneyGain(m,x=None,y=None):
 
 def KeyInputCheck(i):
 	global inventory, ux, uy
-	if i == pygame.K_RIGHT: ux+=5
-	elif i == pygame.K_LEFT: ux-=5
-	elif i == pygame.K_ESCAPE: setTime(0,0,'SET')
+	if i == pygame.K_ESCAPE: setTime(0,0,'SET')
 	elif i == pygame.K_LSHIFT: pass
-	if i == pygame.K_UP: uy -= 5
-	elif i == pygame.K_DOWN: uy += 5
 	elif not endTime:
 		if i == pygame.K_UP: setTime(0,3,'INCR')
 		elif i == pygame.K_DOWN: setTime(-1,0,'INCR')
@@ -349,7 +405,6 @@ def loadAll(l):
 	for p in l:
 		if type(l)==dict: p = l[p]
 		if p:
-			#if p.toI=='TEXT': drawText(p.text,p.size,p.coord,p.color,p.font)
 			if 'TEXT' in p.toI: drawText(p.text, p.size, p.coord, p.color, p.font)
 			else: printToScreen(p.getPicPath(), p.getCoord())
 			if not p.iterate(): r.append(p)
@@ -366,8 +421,9 @@ def loadGraphics(loadList, loadGrid, loadTextList, loadAboveGrid, inventory, sto
 	inventory = loadAll(inventory)
 	for row in loadGrid: loadAll(row) #Doesn't return an updated grid (for removing through timeline)
 	loadAboveGrid = loadAll(loadAboveGrid)
-	storeInventory = loadAll(storeInventory)
 	loadTextList = loadAll(loadTextList)
+	storeInventory = loadAll(storeInventory)
+
 
 def clickCheckAll(l,x,y,onTop=[]):
 	c = list(l.keys())[::-1] if type(l)==dict else l[::-1]
@@ -379,13 +435,16 @@ def clickCheckAll(l,x,y,onTop=[]):
 def clickCheck(x,y):
 	global loadList, loadGrid, inventory, storeInventory, count, currentItem, loadTextList
 
+	l = clickCheckAll(storeInventory,x,y)
+	if l: return l
+
 	for row in loadGrid:
 		a = clickCheckAll(row,x,y)
 		if a:
 			loadAboveGrid['SELECTOR'] = graphic.Graphic('SELECTOR','Selector.png', (a.x, a.y), False,'UI',1)
 			return a
 
-	for l in [loadTextList, storeInventory, loadAboveGrid,inventory,loadList]:
+	for l in [loadTextList, storeInventory, loadAboveGrid, inventory,loadList]:
 		l = clickCheckAll(l,x,y)
 		if l: return l
 
