@@ -1,0 +1,14 @@
+__pycache__/RGBColors.cpython-39.pyc
+__pycache__/booster.cpython-39.pyc
+__pycache__/globalFile.cpython-39.pyc
+__pycache__/graphic.cpython-39.pyc
+__pycache__/gridtile.cpython-39.pyc
+__pycache__/inputControl.cpython-39.pyc
+__pycache__/item.cpython-39.pyc
+__pycache__/plant.cpython-39.pyc
+__pycache__/powerup.cpython-39.pyc
+__pycache__/session.cpython-39.pyc
+__pycache__/store.cpython-39.pyc
+__pycache__/textgraphic.cpython-39.pyc
+.DS_Store
+GameTemplate.py
