@@ -18,7 +18,6 @@ from datetime import date
 
 #Known bugs: in loadList Tile number is wrong. It works for single digits but is not able to parse out after that
 
-
 def main():
 	global pygame,loadList, win, count, loadGrid, loadTextList, endTime, tempTime, currency, inventory, currentItem, loadAboveGrid, items
 	global storeInventory, sessionsList, ux, uy
@@ -35,8 +34,10 @@ def main():
 
 	#Intilizie Inventory
 
-	inventory = [booster.GuacBooster() for x in range(9)]
+	#inventory = [booster.GuacBooster() for x in range(9)]
 	#inventory[0] = powerup.TileExpand()
+
+	inventory = [None for _ in range(9)]
 	EnterStore()
 	InventoryUpdate()
 
@@ -73,10 +74,10 @@ def main():
 			#loadGrid[x][y].name += f' x:{x},y:{y}'
 			#loadGrid[x][y].plantOn(plant.Plant())
 
-	loadGrid[3][3] = gridtile.Gridtile(3, 3, 'OUTGRID')
-	loadGrid[3][4] = gridtile.Gridtile(3, 4, 'OUTGRID')
-	loadGrid[4][3] = gridtile.Gridtile(4, 3, 'OUTGRID')
-	loadGrid[4][4] = gridtile.Gridtile(4, 4, 'OUTGRID')
+	loadGrid[1][1] = gridtile.Gridtile(1, 1, 'OUTGRID')
+	#loadGrid[3][4] = gridtile.Gridtile(3, 4, 'OUTGRID')
+	#loadGrid[4][3] = gridtile.Gridtile(4, 3, 'OUTGRID')
+	#loadGrid[4][4] = gridtile.Gridtile(4, 4, 'OUTGRID')
 
 	tempTime = 45*60
 	endTime = None
@@ -84,7 +85,7 @@ def main():
 	loadTextList.update({'TIMER1': textgraphic.Textgraphic('TIMER1',f'{tempTime//60:02}:{tempTime%60:02}',100,(135,12),RGBColors.DDG,'iflash-502.ttf')})
 
 	currentItem = None
-	currency = 3
+	currency = 10
 
 	#Load From Savefile
 	#saveLoad('L')
@@ -107,7 +108,7 @@ def main():
 def EnterStore(t='Red Head Store'):
 	global loadAboveGrid, loadTextList, storeInventory, items
 
-	if t == 'EXIT' and 'Store' in loadAboveGrid:
+	if t == 'EXIT' or 'Store' in loadAboveGrid:
 		loadAboveGrid.pop('Store')
 		loadTextList.pop('StoreText1')
 		loadTextList.pop('StoreText2')
@@ -292,7 +293,7 @@ def inputCheck(i='None'):
 						if not endTime:
 							if clickingOn.name=='Heart' and tempTime>0: setTime(0, 0, 'INIT')
 							elif clickingOn.name == 'Shell':
-								EnterStore('EXIT')
+								EnterStore()
 								#setTime(0, 0, 'SET')
 							elif clickingOn.name == 'Plus': setTime(15, 0, 'INCR')
 
