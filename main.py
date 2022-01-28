@@ -30,13 +30,14 @@ def main():
 	loadAboveGrid = {}
 	loadTextList = {}
 
+	#Not sure if this is needed because it gets reintialized in the store
 	items = {'BasicSeed': item.BasicSeed(), 'BlueSeed': item.BlueSeed(), 'PinkSeed': item.PinkSeed()}
 
-	#Intilizie Inventory
 
 	#inventory = [booster.GuacBooster() for x in range(9)]
 	#inventory[0] = powerup.TileExpand()
 
+	#Intilizie Inventory
 	inventory = [None for _ in range(9)]
 	EnterStore()
 	InventoryUpdate()
@@ -55,6 +56,7 @@ def main():
 
 	#loadList['CountdownFrame'] = graphic.Graphic("FrameTrace.png",(210,10),True)
 
+	#first Layer is the background so it sets that and SELECTOR is for the tileGrid (White selctor tool)
 	loadList['Background'].name = "Background"
 	loadList['SELECTOR'] = None
 
@@ -67,6 +69,7 @@ def main():
 	#Currency
 	loadList['CurrencyCoin'] = graphic.Graphic('CurrencyCoin',"Coins.png",(16,368),False,'UI')
 
+	#Loads all the tiles
 	loadGrid = [[None for x in range(10)] for y in range(10)]
 	for x in range(10):
 		for y in range(10):
@@ -84,12 +87,14 @@ def main():
 	loadTextList.update({'TIMER': textgraphic.Textgraphic('TIMER',f'{tempTime//60:02}:{tempTime%60:02}',100,(135,20),RGBColors.GRAY,'iflash-502.ttf')})
 	loadTextList.update({'TIMER1': textgraphic.Textgraphic('TIMER1',f'{tempTime//60:02}:{tempTime%60:02}',100,(135,12),RGBColors.DDG,'iflash-502.ttf')})
 
+
 	currentItem = None
 	currency = 10
 
 	#Load From Savefile
 	#saveLoad('L')
 
+	#Lods the Currency
 	loadTextList['Currency2'] = textgraphic.Textgraphic('Currency2',f"${currency}", 15, (72,375), (0,0,0), 'Pixeled.ttf')
 	loadTextList['Currency'] = textgraphic.Textgraphic('Currency',f"${currency}", 15, (70,373), RGBColors.Gold, 'Pixeled.ttf')
 
@@ -160,6 +165,8 @@ def InventoryUpdate(itemToBeAdded=[]):
 
 	return Added
 
+
+#Random Text Bubble with Quotes
 def TextBubble(t='G'):
 	global loadTextList, loadList
 	if len(t)>1:
@@ -176,6 +183,7 @@ def TextBubble(t='G'):
 	if len(phrase)>39: loadTextList['Text2'] = textgraphic.Textgraphic('Text2',phrase[40:78], 10, (163, 152), (0, 0, 0), 'iflash-502.ttf',25)
 	#The loadList is being iterated twice
 
+#Main gameplay loop
 def update():
 	global pygame, count, win, loadList, loadGrid, endTime, tempTime, inventory, sessionsList
 	global ux, uy
@@ -440,9 +448,22 @@ def clickCheck(x,y):
 	if l: return l
 
 	for row in loadGrid:
+		
 		a = clickCheckAll(row,x,y)
 		if a:
+			
+
 			loadAboveGrid['SELECTOR'] = graphic.Graphic('SELECTOR','Selector.png', (a.x, a.y), False,'UI',1)
+			x = a.x + 40
+			y = a.y + 40
+			if a.plant:
+				loadAboveGrid['GridDescrFrame'] = graphic.Graphic('GridDescrFrame','ItemDescr.png',(x,y),False,'UI',1)
+				
+				feats = [str(_) for _ in (a.plant.name,f'Exp Harvest: {a.plant.TimeToHarvest}',f'Stages: {a.plant.stage}/{len(a.plant.Stages)}')]
+				for i,line in enumerate(feats):
+					color = RGBColors.DGRAY
+					loadTextList[f'GridescrLine{i}'] = textgraphic.Textgraphic(f'GridescrLine{i}',line,8,(x+7,y+7+(10*i)),color,'iflash-502.ttf',1)
+
 			return a
 
 	for l in [loadTextList, storeInventory, loadAboveGrid, inventory,loadList]:

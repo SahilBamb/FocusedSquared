@@ -6,7 +6,6 @@ class Gridtile(Graphic):
 	def __init__(self,x,y,kind='DIRT'):
 
 		self.plant = None
-
 		self.Gridx = x
 		self.Gridy = y
 		slx = 190
