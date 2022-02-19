@@ -20,15 +20,22 @@ class Graphic:
 	def __str__(self):
 		return self.name if len(self.name)>0 else f"Name N/A - Picture Path: {self.picPath}"
 
-	def clicked(self,x,y):
-		return (self.clickable and self.y+5 < y < self.bottomMost-10 and self.x+5 < x < self.rightMost-10)
+	def clicked(self,x,y, grid=True):
+		if grid:
+			return (self.clickable and self.y+5 < y < self.bottomMost-10 and self.x+5 < x < self.rightMost-10)
+		else:
+			return (self.clickable and self.y-30 < y < self.bottomMost+30) and (self.x-30 < x < self.rightMost+30)
 		#hard coded might need to be changed
 
-	def getPicPath(self):
-		self.iterate()
+	def getPicPath(self,iterate=True):
+		if iterate: self.iterate()
 		return self.picPath
 
 	def getCoord(self):
+		if (self.x,self.y)!=self.coord: 
+			self.coord = (self.x,self.y)
+		#print("warning coordinate error!")
+
 		return self.coord
 
 	def setBoundaries(self,picPath,coord):
@@ -47,6 +54,10 @@ class Graphic:
 		topRight = (x+width,y)
 		botLeft = (x,y+height)
 		botRight = (x+width,y+height)
+		#self.topLeft = topLeft
+		#self.topRight = topRight
+		#self.botLeft = botLeft
+		#self.botRight = botRight
 		self.rightMost = x+width
 		self.bottomMost = y+height
 		return (topLeft,topRight,botLeft,botRight)

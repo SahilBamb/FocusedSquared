@@ -2,6 +2,7 @@ import random
 import graphic
 import item
 import powerup
+import actorItem
 
 from item import Item
 
@@ -44,11 +45,22 @@ class GuacBooster(Booster):
     def __init__(self):
         descrList = ['ooh extra guac pack','Includes: 1-2 Cards', 'Rarities: Rares']
         posItems = [powerup.TileExpand()]
+        posItems = [self.setLoot()]
         numItems = random.randint(1,2)
         pic = graphic.Graphic('GuacBooster','GuacPack.png',(0,0),True,'ITEM')
-        super().__init__(pic,'Basic Booster', 50, descrList,posItems,numItems)
+        super().__init__(pic,'Basic Booster', 25, descrList,posItems,numItems)
 
 
     def setLoot(self):
-        pass
+        rng = random.randint(1,100)
+        if 1<=rng<=50: i = item.BasicSeed()
+        elif 51 <= rng <= 70: i = item.BlueSeed()
+        elif 71 <= rng <= 80: i = item.YellowSeed()
+        elif 81 <= rng <= 98: i = powerup.TileExpand()
+        elif 99 <= rng <= 99: i = actorItem.BabyBlueDragon()
+        elif 100 <= rng <= 100: i = actorItem.PurpleDragon()
+        else:
+            print(f'rng is out of range {rng}')
+            i = item.BasicSeed()
+        return i
 

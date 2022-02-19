@@ -33,7 +33,12 @@ class Item:
 		return self.pic.getOnTop()
 
 	def SetDescr(self,descrList):
-		return [f'{self.name}',f'cost: {self.cost}',descrList[0], f'Rarity: {self.rarity}', descrList[1] ,descrList[2] ]
+		try:
+			return [f'{self.name}',f'cost: {self.cost}',descrList[0], f'Rarity: {self.rarity}', descrList[1] ,descrList[2] ]
+		except:
+			print(self.name)
+			print(descrList)
+			exit()
 		#return [f'{self.name}', f'ItemType: {self.itemType}', descrList[0], f'Rarity: {self.rarity}', descrList[1],descrList[2], f'cost: {self.cost}']
 
 class BasicSeed(Item):

@@ -12,6 +12,9 @@ import item
 import pickle
 import session
 import powerup
+import actor
+import actorItem
+import scroll
 from pygame.locals import *
 from datetime import date
 
@@ -20,25 +23,34 @@ from datetime import date
 
 def main():
 	global pygame,loadList, win, count, loadGrid, loadTextList, endTime, tempTime, currency, inventory, currentItem, loadAboveGrid, items
-	global storeInventory, sessionsList, ux, uy
+	global storeInventory, sessionsList, ux, uy, loadActors, GridBounds
 
 	#Intilize actual game
 	pygame.init()
 
 	#loadlist for images
 	loadList = {}
+	loadActors = {}
+	loadActors = {}
 	loadAboveGrid = {}
 	loadTextList = {}
 
 	#Not sure if this is needed because it gets reintialized in the store
 	items = {'BasicSeed': item.BasicSeed(), 'BlueSeed': item.BlueSeed(), 'PinkSeed': item.PinkSeed()}
 
-
 	#inventory = [booster.GuacBooster() for x in range(9)]
 	#inventory[0] = powerup.TileExpand()
 
 	#Intilizie Inventory
 	inventory = [None for _ in range(9)]
+	inventory[0] = actorItem.PinkGirl()
+	inventory[1] = actorItem.Mixie()
+	inventory[2] = actorItem.BabyBlueDragon()
+	inventory[3] = actorItem.PurpleDragon()
+	inventory[4] = actorItem.GreenFox()
+	inventory[5] = scroll.StoreOneScroll()
+	inventory[6] = scroll.StoreTwoScroll()
+
 	EnterStore()
 	InventoryUpdate()
 
@@ -73,11 +85,31 @@ def main():
 	loadGrid = [[None for x in range(10)] for y in range(10)]
 	for x in range(10):
 		for y in range(10):
-			loadGrid[x][y] = None #gridtile.Gridtile(x, y, 'OUTGRID')
+			loadGrid[x][y] = gridtile.Gridtile(x, y, 'OUTGRID')
+			#loadGrid[x][y] = None #
+			#gridtile.Gridtile(x, y, 'OUTGRID')
 			#loadGrid[x][y].name += f' x:{x},y:{y}'
 			#loadGrid[x][y].plantOn(plant.Plant())
 
-	loadGrid[1][1] = gridtile.Gridtile(1, 1, 'OUTGRID')
+	#loadGrid[1][1] = gridtile.Gridtile(1, 1, 'OUTGRID')
+
+
+	minX = 500
+	maxX = 0
+	minY = 500
+	maxY = 0
+
+
+	for x in range(10):
+		for y in range(10):
+			if loadGrid[x][y]:
+				minX = min(loadGrid[x][y].x,minX)
+				maxX = max(loadGrid[x][y].rightMost,maxX)
+				minY = min(loadGrid[x][y].y,minY)
+				maxY = max(loadGrid[x][y].bottomMost,maxY)
+
+	GridBounds = {'minX':minX,'maxX':maxX,'minY':minY,'maxY':maxY}
+
 	#loadGrid[3][4] = gridtile.Gridtile(3, 4, 'OUTGRID')
 	#loadGrid[4][3] = gridtile.Gridtile(4, 3, 'OUTGRID')
 	#loadGrid[4][4] = gridtile.Gridtile(4, 4, 'OUTGRID')
@@ -89,7 +121,7 @@ def main():
 
 
 	currentItem = None
-	currency = 10
+	currency = 1000
 
 	#Load From Savefile
 	#saveLoad('L')
@@ -128,7 +160,8 @@ def EnterStore(t='Red Head Store'):
 			loadAboveGrid['Store'] = graphic.Graphic('Store', loadStore.storeImage, (10,133), False, 'UI')
 			loadTextList['StoreText1'] = textgraphic.Textgraphic('StoreText1',loadStore.storeText1,8,(75,187),RGBColors.DGRAY,'iflash-502.ttf')
 			loadTextList['StoreText2'] = textgraphic.Textgraphic('StoreText2',loadStore.storeText2,8,(75,195),RGBColors.DGRAY,'iflash-502.ttf')
-			items = {'BasicSeed':item.BasicSeed(),'BlueSeed':item.BlueSeed(),'PinkSeed':item.PinkSeed(),'YellowSeed':item.YellowSeed(),'BasicBooster':booster.BasicBooster()}
+			items = {'BasicSeed':item.BasicSeed(),'BlueSeed':item.BlueSeed(),'PinkSeed':item.PinkSeed(),'YellowSeed':item.YellowSeed(),'BasicBooster':booster.BasicBooster(),'GuacBooster':booster.GuacBooster(), 'actorSkunk':actorItem.Skunk(), 'actorMixie':actorItem.Mixie() }
+			items.update({'AsianStoreScroll':scroll.StoreOneScroll(),'CamoStoreScroll':scroll.StoreTwoScroll()})
 			posSI = [items[i.strip('\n')] for i in loadStore.storeInventory]
 			storeInventory = []
 			while not (2<=len(storeInventory)<=3):
@@ -185,7 +218,7 @@ def TextBubble(t='G'):
 
 #Main gameplay loop
 def update():
-	global pygame, count, win, loadList, loadGrid, endTime, tempTime, inventory, sessionsList
+	global pygame, count, win, loadList, loadGrid, loadActors, endTime, tempTime, inventory, sessionsList
 	global ux, uy
 
 	#loadList['Test'].coord = (ux, uy)
@@ -197,7 +230,7 @@ def update():
 	inputCheck()
 
 	#load all images
-	loadGraphics(loadList, loadGrid, loadTextList, loadAboveGrid, inventory, storeInventory)
+	loadGraphics(loadList, loadGrid, loadTextList, loadAboveGrid, inventory, storeInventory, loadActors)
 
 	weatherMangement(loadAboveGrid, loadList)
 
@@ -225,9 +258,7 @@ def successfulSession(time):
 		EnterStore('Red Head Store')
 	elif time > 90 and currency>25:
 		EnterStore('Green Eyed Store')
-
 	InventoryUpdate()
-
 
 def saveSession(t):
 	global sessionsList
@@ -254,8 +285,20 @@ def growTiles(loadGrid,timePassed):
 		for tile in row:
 			if tile: tile.grow(timePassed)
 
+def addingActor(actorToAdd):
+	global loadActors,GridBounds
+	#loadActors = {'Mixie':actor.Actor(75,random.randint(20,400))}
+	print(GridBounds)
+	newx = random.randint(GridBounds['minX']+1,GridBounds['maxX'])
+	newy = random.randint(GridBounds['minY']+1,GridBounds['maxY'])
+	loadActors[actorToAdd.name]=actorToAdd.getActInstance(newx,newy)
+	print('Actors currently in',end='')
+	print(loadActors)
+	print(f'Adding {actorToAdd.name}')
+	return True
+
 def PassiveItemClick(clickCheck):
-	global loadList,loadAboveGrid,loadTextList, currency
+	global loadList,loadAboveGrid,loadTextList, currency, loadActors
 	if not clickCheck: return clickCheck
 	if 'ITEM' in clickCheck.toI:
 		if 'ITEM'==clickCheck.toI:
@@ -296,12 +339,17 @@ def inputCheck(i='None'):
 				clickingOn = clickCheck(x,y)
 
 				if clickingOn:
-					if clickingOn.toI == 'STORETEXT': print(clickingOn.text)
+					print(clickingOn.toI)
+					if 'ACTOR' in clickingOn.toI:
+						loadActors.pop(clickingOn.name)
+						InventoryUpdate([clickingOn.item])
+					elif clickingOn.toI == 'STORETEXT': print(clickingOn.text)
 					elif clickingOn.toI == 'UI':
 						if not endTime:
 							if clickingOn.name=='Heart' and tempTime>0: setTime(0, 0, 'INIT')
 							elif clickingOn.name == 'Shell':
-								EnterStore()
+								store = ['Red Head Store','Green Eyed Store','Asian Girl Store','Camo Girl Store'][random.randint(0,3)]
+								EnterStore(store)
 								#setTime(0, 0, 'SET')
 							elif clickingOn.name == 'Plus': setTime(15, 0, 'INCR')
 
@@ -339,11 +387,22 @@ def inputCheck(i='None'):
 								print("Do you have enough money and space?")
 
 						elif clickingOn.itemType=='Powerup':
-
 							if clickingOn.name=='Tile Expand':
 								print('tile though')
 								if expandGrid():
 									inventory[clickingOn.invSlot] = None
+
+						elif clickingOn.itemType=='Scroll':
+							if 'Store Scroll' in clickingOn.name:
+								print('Enter Store')
+								EnterStore(clickingOn.getScroll())
+								if clickingOn.uses<1:
+									inventory[clickingOn.invSlot] = None
+
+						elif clickingOn.itemType=='ACTORitem':
+							print('selecting mixie')
+							if addingActor(inventory[clickingOn.invSlot]):
+								inventory[clickingOn.invSlot] = None
 
 						# #Will pickup Seed and put it in currentItem
 						elif clickingOn.itemType=='SEED':
@@ -408,13 +467,19 @@ def KeyInputCheck(i):
 
 
 def loadAll(l):
-	global pygame,win
+	global pygame,win, GridBounds
 	r = []
-	printToScreen = lambda pic, coord : win.blit(pygame.image.load(pic),(coord))
+	printToScreen = lambda pic, coord, flip=False : win.blit(pygame.image.load(pic),(coord))
+	printActorToScreen = lambda pic, coord : win.blit(pic,(coord))
 	for p in l:
 		if type(l)==dict: p = l[p]
 		if p:
-			if 'TEXT' in p.toI: drawText(p.text, p.size, p.coord, p.color, p.font)
+			if 'ACTOR' in p.toI: 
+				if p.facingRight: printActorToScreen(pygame.transform.flip(pygame.image.load(p.getPicPath()), True, False), p.getCoord())
+				else: printToScreen(p.getPicPath(), p.getCoord())
+				if not p.iterate(GridBounds): r.append(p)
+				continue
+			elif 'TEXT' in p.toI: drawText(p.text, p.size, p.coord, p.color, p.font)
 			else: printToScreen(p.getPicPath(), p.getCoord())
 			if not p.iterate(): r.append(p)
 			for o in p.getOnTop(): printToScreen(o.picPath,(p.coord[0],p.coord[1]-10))
@@ -423,17 +488,18 @@ def loadAll(l):
 	#I DON'T THINK THIS WORKS FOR LISTS (You can make it work by using enumerate and then appending indexes to r instead of keys
 	return l
 
-def loadGraphics(loadList, loadGrid, loadTextList, loadAboveGrid, inventory, storeInventory):
+def loadGraphics(loadList, loadGrid, loadTextList, loadAboveGrid, inventory, storeInventory, loadActors):
 	global pygame, win, count
-
+	#Added Code
 	loadList = loadAll(loadList)
 	inventory = loadAll(inventory)
 	for row in loadGrid: loadAll(row) #Doesn't return an updated grid (for removing through timeline)
 	loadAboveGrid = loadAll(loadAboveGrid)
 	loadTextList = loadAll(loadTextList)
 	storeInventory = loadAll(storeInventory)
+	loadActor = loadAll(loadActors)
 
-
+	
 def clickCheckAll(l,x,y,onTop=[]):
 	c = list(l.keys())[::-1] if type(l)==dict else l[::-1]
 	for p in c:
@@ -442,17 +508,20 @@ def clickCheckAll(l,x,y,onTop=[]):
 	return None
 
 def clickCheck(x,y):
-	global loadList, loadGrid, inventory, storeInventory, count, currentItem, loadTextList
+	global loadList, loadGrid, inventory, storeInventory, count, currentItem, loadTextList, loadActors
 
 	l = clickCheckAll(storeInventory,x,y)
 	if l: return l
+
+	for l in [loadActors]:
+		l = clickCheckAll(l,x,y)
+		if l: return l
 
 	for row in loadGrid:
 		
 		a = clickCheckAll(row,x,y)
 		if a:
 			
-
 			loadAboveGrid['SELECTOR'] = graphic.Graphic('SELECTOR','Selector.png', (a.x, a.y), False,'UI',1)
 			x = a.x + 40
 			y = a.y + 40
